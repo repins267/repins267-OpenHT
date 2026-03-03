@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.openht.app">
+
+    <!-- ==================== PERMISSIONS ==================== -->
+
+    <!-- Bluetooth Classic (RFCOMM) - radio connection -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <!-- API 31+ Bluetooth permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- GPS / Location for Near Repeater feature -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Internet for RepeaterBook API -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Foreground service for persistent BT + GPS in background -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- Audio for BT headset / vehicle audio -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <!-- Android Auto -->
+    <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
+
+    <!-- Hardware features -->
+    <uses-feature android:name="android.hardware.bluetooth" android:required="true" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="true" />
+
+    <application
+        android:label="OpenHT"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/LaunchTheme"
+        android:allowBackup="true"
+        android:supportsRtl="true">
+
+        <!-- ==================== MAIN ACTIVITY ==================== -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/NormalTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ==================== ANDROID AUTO ==================== -->
+
+        <!-- Declare Android Auto support -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- Car App Service - handles Android Auto UI -->
+        <service
+            android:name=".auto.OpenHtCarAppService"
+            android:exported="true"
+            android:label="OpenHT">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.NAVIGATION" />
+            </intent-filter>
+        </service>
+
+        <!-- ==================== BACKGROUND SERVICES ==================== -->
+
+        <!-- Foreground service: maintains BT connection + GPS while in background -->
+        <service
+            android:name=".services.RadioForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|location" />
+
+    </application>
+</manifest>

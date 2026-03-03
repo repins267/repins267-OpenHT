@@ -1,0 +1,63 @@
+name: openht
+description: Open-source Android controller for Benshi-protocol radios (VGC VR-N76, VR-N7600, BTech UV-Pro, etc.) with Near Repeater, APRS map, and Android Auto support.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Benshi radio BT protocol (Dart port of benlink by Kyle Husmann KC3SLD)
+  flutter_benlink:
+    git:
+      url: https://github.com/SarahRoseLives/flutter_benlink.git
+      ref: main
+
+  # Bluetooth Classic (RFCOMM) for radio connection
+  flutter_bluetooth_serial: ^0.4.0
+
+  # BLE support (for future BLE connection mode)
+  flutter_blue_plus: ^1.31.0
+
+  # GPS / Location
+  geolocator: ^11.0.0
+  geocoding: ^3.0.0
+
+  # Maps (APRS POI display, repeater map)
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+
+  # HTTP client for RepeaterBook API
+  http: ^1.2.0
+
+  # Local SQLite cache for repeater DB
+  sqflite: ^2.3.0
+  path: ^1.9.0
+
+  # State management
+  provider: ^6.1.0
+
+  # Permissions
+  permission_handler: ^11.3.0
+
+  # UI utilities
+  cupertino_icons: ^1.0.6
+  shared_preferences: ^2.2.0
+
+  # APRS parsing (port of aprs-parser by Lee K0QED)
+  # (implemented locally in lib/aprs/)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
