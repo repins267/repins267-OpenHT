@@ -17,6 +17,8 @@ Our decompilation and Logcat analysis revealed the following "under-the-hood" be
 
 * **Bypassing Android Privacy:** The vendor app targets the internal Android system interfaces to bypass standard Bluetooth redaction. This allows them to create a "Forever ID" for your radio hardware that survives app uninstalls or phone factory resets.
 * **Shadow Linking (AFSK Relay):** The vendor's protocol files reveal an \AFSK = 3\ message type. This architecture allows the app to digitize over-the-air audio and relay it to foreign servers, potentially turning your local transceiver into an unannounced internet gateway.
+* **Proactive Tracking & Identity Correlation Verified Identity Correlation:** During the authentication phase, the vendor app doesn't just verify a callsign; it cross-references the retrieved hardware BT MAC address with the user's social/account profile (QQ/WeChat/Google). This creates a permanent, non-anonymous link between a physical radio transceiver and a verified human identity stored on Alibaba Cloud infrastructure.
+* **Hidden "Heartbeat" Telemetry:** Analysis revealed a mandatory gRPC call to rpc.benshikj.com:800 every time the Bluetooth control screen is accessed. This "heartbeat" occurs regardless of whether the user has opted into internet linking or social features, effectively tracking the frequency and duration of the user's local radio hardware usage.
 
 ## Our Privacy Promise
 
