@@ -47,6 +47,31 @@ OpenHT fills those gaps.
 - **Dashboard** — frequency display, battery state, TX/RX status, GPS lock
 - **Dark theme** — designed for vehicle/night use
 
+## 📱 Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>Dashboard</b></td>
+    <td align="center"><b>Frequency Control</b></td>
+    <td align="center"><b>Near Repeater</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/OpenHT_Dashv1.png" width="220" alt="OpenHT Dashboard"/></td>
+    <td><img src="assets/screenshots/OpenHT_DashFreqv1.png" width="220" alt="OpenHT Frequency Control"/></td>
+    <td><img src="assets/screenshots/OpenHT_Repeatv1.png" width="220" alt="OpenHT Near Repeater"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>APRS Map</b></td>
+    <td align="center"><b>Spotter Network</b></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/OpenHT_APRSv1.png" width="220" alt="OpenHT APRS Map"/></td>
+    <td><img src="assets/screenshots/OpenHT_Spottterv1.png" width="220" alt="OpenHT Spotter Network"/></td>
+    <td></td>
+  </tr>
+</table>
+
 ### 🚧 In Progress
 - Android Auto UI (List template for repeater selection, Nav template for APRS map)
 - Full CTCSS/DCS tone programming when tuning
