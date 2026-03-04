@@ -1,10 +1,35 @@
-# OpenHT
+﻿# OpenHT
 
 > Open-source Android controller for VGC / Benshi-protocol radios with Near Repeater, APRS map, and Android Auto support.
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)]()
 [![Radio: VR-N76 / VR-N7600](https://img.shields.io/badge/Radio-VR--N76%20%7C%20VR--N7600-orange.svg)]()
+
+## 📱 Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>Dashboard</b></td>
+    <td align="center"><b>Frequency Control</b></td>
+    <td align="center"><b>Near Repeater</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/OpenHT_Dashv1.png" width="220" alt="OpenHT Dashboard"/></td>
+    <td><img src="assets/screenshots/OpenHT_DashFreqv1.png" width="220" alt="OpenHT Frequency Control"/></td>
+    <td><img src="assets/screenshots/OpenHT_Repeatv1.png" width="220" alt="OpenHT Near Repeater"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>APRS Map</b></td>
+    <td align="center"><b>Spotter Network</b></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/OpenHT_APRSv1.png" width="220" alt="OpenHT APRS Map"/></td>
+    <td><img src="assets/screenshots/OpenHT_Spottterv1.png" width="220" alt="OpenHT Spotter Network"/></td>
+    <td></td>
+  </tr>
+</table>
 
 ---
 
@@ -46,31 +71,6 @@ OpenHT fills those gaps.
 - **APRS Map** — displays decoded APRS beacons as POI markers on OpenStreetMap
 - **Dashboard** — frequency display, battery state, TX/RX status, GPS lock
 - **Dark theme** — designed for vehicle/night use
-
-## 📱 Screenshots
-
-<table>
-  <tr>
-    <td align="center"><b>Dashboard</b></td>
-    <td align="center"><b>Frequency Control</b></td>
-    <td align="center"><b>Near Repeater</b></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshots/OpenHT_Dashv1.png" width="220" alt="OpenHT Dashboard"/></td>
-    <td><img src="assets/screenshots/OpenHT_DashFreqv1.png" width="220" alt="OpenHT Frequency Control"/></td>
-    <td><img src="assets/screenshots/OpenHT_Repeatv1.png" width="220" alt="OpenHT Near Repeater"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>APRS Map</b></td>
-    <td align="center"><b>Spotter Network</b></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td><img src="assets/screenshots/OpenHT_APRSv1.png" width="220" alt="OpenHT APRS Map"/></td>
-    <td><img src="assets/screenshots/OpenHT_Spottterv1.png" width="220" alt="OpenHT Spotter Network"/></td>
-    <td></td>
-  </tr>
-</table>
 
 ### 🚧 In Progress
 - Android Auto UI (List template for repeater selection, Nav template for APRS map)
@@ -202,6 +202,8 @@ PRs welcome. Areas of highest value right now:
 
 Please open an issue before starting large features.
 
+---
 
-## ?? Why was this built?
+## 🔐 Why was this built?
+
 Read the [Privacy & Security Audit](./PRIVACY_AUDIT.md) for details on vendor hardware tracking and our mitigation strategies.
