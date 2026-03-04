@@ -176,3 +176,7 @@ PRs welcome. Areas of highest value right now:
 4. **Testing** with UV-Pro, GA-5WB, VR-N7500 hardware
 
 Please open an issue before starting large features.
+
+
+## ?? Why was this built?
+Read the [Privacy & Security Audit](./PRIVACY_AUDIT.md) for details on vendor hardware tracking and our mitigation strategies.
