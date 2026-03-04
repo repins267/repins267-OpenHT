@@ -17,7 +17,6 @@ Our decompilation and Logcat analysis revealed the following "under-the-hood" be
 
 * **Bypassing Android Privacy:** The vendor app targets the internal Android system interfaces to bypass standard Bluetooth redaction. This allows them to create a "Forever ID" for your radio hardware that survives app uninstalls or phone factory resets.
 * **Shadow Linking (AFSK Relay):** The vendor's protocol files reveal an \AFSK = 3\ message type. This architecture allows the app to digitize over-the-air audio and relay it to foreign servers, potentially turning your local transceiver into an unannounced internet gateway.
-* **Encrypted Local Data:** Analysis of the vendor's RepeaterBook implementation shows a 14MB encrypted SQLCipher database. **OpenHT** moves away from this "black box" approach by using open GPX/CSV formats and transparent API tokens.
 
 ## Our Privacy Promise
 
