@@ -3,6 +3,7 @@
 // API docs: https://www.repeaterbook.com/wiki/doku.php?id=api
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/repeater.dart';
 
@@ -49,11 +50,22 @@ class RepeaterBookClient {
       '&format=json',
     );
 
-    final response = await http
-        .get(uri, headers: {'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)'})
-        .timeout(_timeout);
+    debugPrint('RepeaterBook: GET $uri');
+
+    late http.Response response;
+    try {
+      response = await http
+          .get(uri, headers: {'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)'})
+          .timeout(_timeout);
+    } catch (e) {
+      debugPrint('RepeaterBook: Request failed — $e');
+      throw RepeaterBookException('Network error: $e');
+    }
+
+    debugPrint('RepeaterBook: HTTP ${response.statusCode} — ${response.body.length} bytes');
 
     if (response.statusCode != 200) {
+      debugPrint('RepeaterBook: Error body: ${response.body}');
       throw RepeaterBookException(
           'RepeaterBook API error: HTTP ${response.statusCode}');
     }
@@ -62,10 +74,12 @@ class RepeaterBookClient {
 
     // RepeaterBook returns {"count": N, "results": [...]}
     if (data is! Map || data['results'] == null) {
+      debugPrint('RepeaterBook: Unexpected response shape — ${response.body.substring(0, 200)}');
       return [];
     }
 
     final results = data['results'] as List<dynamic>;
+    debugPrint('RepeaterBook: Got ${results.length} results');
     return results.map((json) {
       final distMiles = _parseDistanceMiles(json['distance']);
       return Repeater.fromRepeaterBookJson(
@@ -75,7 +89,7 @@ class RepeaterBookClient {
     }).toList();
   }
 
-  /// Fetch repeaters by state (for offline pre-loading)
+  /// Fetch repeaters by state (for offline pre-loading).
   Future<List<Repeater>> fetchByState(String stateAbbr) async {
     await _rateLimit();
 
@@ -83,11 +97,22 @@ class RepeaterBookClient {
       '$_baseUrl?country=US&state=$stateAbbr&format=json&use=OPEN',
     );
 
-    final response = await http
-        .get(uri, headers: {'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)'})
-        .timeout(const Duration(seconds: 30));
+    debugPrint('RepeaterBook: GET $uri');
+
+    late http.Response response;
+    try {
+      response = await http
+          .get(uri, headers: {'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)'})
+          .timeout(const Duration(seconds: 30));
+    } catch (e) {
+      debugPrint('RepeaterBook: Request failed — $e');
+      throw RepeaterBookException('Network error: $e');
+    }
+
+    debugPrint('RepeaterBook: HTTP ${response.statusCode} — ${response.body.length} bytes');
 
     if (response.statusCode != 200) {
+      debugPrint('RepeaterBook: Error body: ${response.body}');
       throw RepeaterBookException(
           'RepeaterBook API error: HTTP ${response.statusCode}');
     }

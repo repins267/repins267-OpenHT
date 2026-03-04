@@ -1,14 +1,126 @@
 // lib/screens/near_repeater/near_repeater_screen.dart
-// Near Repeater screen - GPS-based repeater lookup and radio tuning
-// Analogous to Icom's DR Mode "Near Repeater" but powered by RepeaterBook
+// Near Repeater — fully offline, loads from bundled GPX assets (no network).
+// GPX data © RepeaterBook.com · Colorado 2m/70cm · Exported 2026-03-03
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../models/repeater.dart';
+import 'package:xml/xml.dart';
 import '../../services/gps_service.dart';
 import '../../bluetooth/radio_service.dart';
-import '../../repeaterbook/repeaterbook_client.dart';
-import '../../services/repeater_cache.dart';
+
+// ─── Data model ───────────────────────────────────────────────────────────────
+
+class _Repeater {
+  final double lat;
+  final double lon;
+  final String callsign;
+  final double outputFreq;   // MHz — what the radio receives
+  final String offsetDir;    // '+', '-', or ''
+  final double? ctcssHz;     // CTCSS tone in Hz, null = no tone
+  final String location;     // from <desc>
+  final bool isOpen;
+  final String band;         // '2m' or '70cm'
+  double distanceMiles = 0;
+
+  _Repeater({
+    required this.lat,
+    required this.lon,
+    required this.callsign,
+    required this.outputFreq,
+    required this.offsetDir,
+    this.ctcssHz,
+    required this.location,
+    required this.isOpen,
+    required this.band,
+  });
+}
+
+// ─── GPX parsing ─────────────────────────────────────────────────────────────
+
+List<_Repeater> _parseGpx(String gpxXml, String band) {
+  final doc = XmlDocument.parse(gpxXml);
+  final repeaters = <_Repeater>[];
+
+  for (final wpt in doc.findAllElements('wpt')) {
+    final lat = double.tryParse(wpt.getAttribute('lat') ?? '') ?? 0.0;
+    final lon = double.tryParse(wpt.getAttribute('lon') ?? '') ?? 0.0;
+    if (lat == 0.0 && lon == 0.0) continue;
+
+    final nameEl = wpt.findElements('name').firstOrNull;
+    final descEl = wpt.findElements('desc').firstOrNull
+        ?? wpt.findElements('cmt').firstOrNull;
+
+    final nameText = nameEl?.innerText.trim() ?? '';
+    final descText = descEl?.innerText.trim() ?? '';
+
+    // Name format: CALLSIGN OUTPUT_FREQ INPUT_FREQ+/- [CTCSS]
+    final parts = nameText.split(RegExp(r'\s+'));
+    if (parts.length < 2) continue;
+
+    final callsign   = parts[0];
+    final outputFreq = double.tryParse(parts[1]) ?? 0.0;
+    if (outputFreq == 0.0) continue;
+
+    // Offset direction: trailing '+' or '-' on parts[2]
+    String offsetDir = '';
+    if (parts.length > 2) {
+      final field = parts[2];
+      if (field.endsWith('+')) offsetDir = '+';
+      if (field.endsWith('-')) offsetDir = '-';
+    }
+
+    // CTCSS: parts[3] (Hz, e.g. "103.5")
+    double? ctcss;
+    if (parts.length > 3) {
+      ctcss = double.tryParse(parts[3]);
+    }
+
+    final descNorm = descText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final isOpen = !descNorm.toUpperCase().contains('CLOSED');
+
+    // Location: strip callsign and OPEN/CLOSED tags from desc
+    String location = descNorm
+        .replaceAll(RegExp(r'\bOPEN\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\bCLOSED\b', caseSensitive: false), '')
+        .replaceAll(callsign, '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (location.isEmpty) location = descNorm;
+
+    repeaters.add(_Repeater(
+      lat: lat,
+      lon: lon,
+      callsign: callsign,
+      outputFreq: outputFreq,
+      offsetDir: offsetDir,
+      ctcssHz: ctcss,
+      location: location,
+      isOpen: isOpen,
+      band: band,
+    ));
+  }
+  return repeaters;
+}
+
+// ─── Haversine distance (miles) ───────────────────────────────────────────────
+
+double _distanceMiles(double lat1, double lon1, double lat2, double lon2) {
+  const r = 3958.8;
+  final dLat = _deg2rad(lat2 - lat1);
+  final dLon = _deg2rad(lon2 - lon1);
+  final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(_deg2rad(lat1)) *
+          math.cos(_deg2rad(lat2)) *
+          math.sin(dLon / 2) *
+          math.sin(dLon / 2);
+  return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+}
+
+double _deg2rad(double deg) => deg * math.pi / 180.0;
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 class NearRepeaterScreen extends StatefulWidget {
   const NearRepeaterScreen({super.key});
@@ -18,106 +130,70 @@ class NearRepeaterScreen extends StatefulWidget {
 }
 
 class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
-  final _client = RepeaterBookClient();
-  final _cache = RepeaterCache();
-
-  List<Repeater> _repeaters = [];
-  bool _isLoading = false;
-  String? _statusMessage;
+  List<_Repeater> _all = [];
+  bool _isLoading = true;
+  String? _error;
   String _bandFilter = 'All';
   bool _onlyOpen = true;
-  double _radiusMiles = 50;
   int? _tuningIndex;
-
-  static const List<String> _bandOptions = ['All', '2m', '70cm'];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadNearRepeaters());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  Future<void> _loadNearRepeaters({bool forceRefresh = false}) async {
-    final gps = context.read<GpsService>();
-    if (!gps.hasPosition) {
-      setState(() => _statusMessage = 'Waiting for GPS fix...');
-      return;
-    }
-
+  Future<void> _load() async {
     setState(() {
       _isLoading = true;
-      _statusMessage = null;
+      _error = null;
     });
 
-    final lat = gps.latitude!;
-    final lon = gps.longitude!;
-
     try {
-      // Try cache first (unless forcing refresh)
-      if (!forceRefresh) {
-        final cached = await _cache.queryNearby(
-          lat: lat, lon: lon, radiusMiles: _radiusMiles,
-        );
-        if (cached.isNotEmpty) {
-          setState(() {
-            _repeaters = _applyFilters(cached);
-            _isLoading = false;
-            _statusMessage = 'Showing ${_repeaters.length} cached repeaters';
-          });
-          return;
+      final gps = context.read<GpsService>();
+      final double? lat = gps.hasPosition ? gps.latitude : null;
+      final double? lon = gps.hasPosition ? gps.longitude : null;
+
+      final raw2m   = await rootBundle.loadString('assets/repeaters/colorado_2m.gpx');
+      final raw70cm = await rootBundle.loadString('assets/repeaters/colorado_70cm.gpx');
+
+      final list2m   = _parseGpx(raw2m,   '2m');
+      final list70cm = _parseGpx(raw70cm, '70cm');
+      final all      = [...list2m, ...list70cm];
+
+      if (lat != null && lon != null) {
+        for (final r in all) {
+          r.distanceMiles = _distanceMiles(lat, lon, r.lat, r.lon);
         }
+        all.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
       }
 
-      // Fetch from RepeaterBook API
-      setState(() => _statusMessage = 'Fetching from RepeaterBook...');
-      final results = await _client.fetchNearby(
-        lat: lat,
-        lon: lon,
-        radiusMiles: _radiusMiles,
-        band: _bandFilter == 'All' ? null : _bandFilter,
-        onlyOpen: _onlyOpen,
-      );
-
-      // Cache results for offline use
-      await _cache.cacheRepeaters(results);
-
-      setState(() {
-        _repeaters = _applyFilters(results);
-        _isLoading = false;
-        _statusMessage = 'Found ${_repeaters.length} repeaters within '
-            '${_radiusMiles.round()} miles';
-      });
+      if (mounted) {
+        setState(() {
+          _all = all;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      // On network error, fall back to stale cache
-      final stale = await _cache.queryNearby(
-        lat: lat, lon: lon,
-        radiusMiles: _radiusMiles,
-        includeStale: true,
-      );
-      setState(() {
-        _repeaters = _applyFilters(stale);
-        _isLoading = false;
-        _statusMessage = stale.isEmpty
-            ? 'Network error and no cached data: $e'
-            : 'Offline: showing ${stale.length} cached repeaters (may be stale)';
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  List<Repeater> _applyFilters(List<Repeater> list) {
-    return list.where((r) {
-      if (_bandFilter == '2m' && !(r.frequency >= 144 && r.frequency <= 148)) {
-        return false;
-      }
-      if (_bandFilter == '70cm' && !(r.frequency >= 420 && r.frequency <= 450)) {
-        return false;
-      }
+  List<_Repeater> get _filtered {
+    return _all.where((r) {
+      if (_bandFilter == '2m'   && r.band != '2m')   return false;
+      if (_bandFilter == '70cm' && r.band != '70cm') return false;
       if (_onlyOpen && !r.isOpen) return false;
       return true;
     }).toList();
   }
 
-  Future<void> _tuneToRepeater(Repeater repeater, int index) async {
+  Future<void> _tune(_Repeater r, int index) async {
     final radio = context.read<RadioService>();
     if (!radio.isConnected) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -127,172 +203,122 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
     }
 
     setState(() => _tuningIndex = index);
-    final success = await radio.tuneToRepeater(repeater);
+    final ok = await radio.tuneToRepeaterGpx(
+      outputFreqMhz: r.outputFreq,
+      ctcssHz: r.ctcssHz,
+    );
+    if (!mounted) return;
     setState(() => _tuningIndex = null);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success
-              ? 'Tuned to ${repeater.displayFreq} — ${repeater.sysname}'
-              : 'Tune failed: ${radio.errorMessage}'),
-          backgroundColor: success ? Colors.green[700] : Colors.red[700],
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
-  Future<void> _writeGroupToRadio() async {
-    final radio = context.read<RadioService>();
-    if (!radio.isConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Radio not connected')),
-      );
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Write Near Repeaters to Radio'),
-        content: Text(
-          'Write up to ${_repeaters.take(32).length} repeaters '
-          'to Group 6 (Near) on your radio?\n\n'
-          'Existing channels in that group will be overwritten.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Write')),
-        ],
+    final freqStr = r.outputFreq.toStringAsFixed(3);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? 'Tuned to ${r.callsign} — $freqStr MHz'
+            : 'Tune failed: ${radio.errorMessage}'),
+        backgroundColor: ok ? Colors.green[700] : Colors.red[700],
+        duration: const Duration(seconds: 3),
       ),
     );
-
-    if (confirm != true) return;
-
-    setState(() {
-      _isLoading = true;
-      _statusMessage = 'Writing to radio...';
-    });
-
-    final written = await radio.writeNearRepeaterGroup(repeaters: _repeaters);
-
-    setState(() {
-      _isLoading = false;
-      _statusMessage = 'Wrote $written repeaters to Group 6 on radio';
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final gps = context.watch<GpsService>();
+    final gps   = context.watch<GpsService>();
     final radio = context.watch<RadioService>();
-    final theme = Theme.of(context);
+    final list  = _filtered;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Near Repeaters'),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh from RepeaterBook',
-            onPressed: _isLoading ? null : () => _loadNearRepeaters(forceRefresh: true),
+            tooltip: 'Reload',
+            onPressed: _isLoading ? null : _load,
           ),
-          if (radio.isConnected)
-            IconButton(
-              icon: const Icon(Icons.upload),
-              tooltip: 'Write group to radio',
-              onPressed: _isLoading || _repeaters.isEmpty ? null : _writeGroupToRadio,
-            ),
         ],
       ),
       body: Column(
         children: [
-          // Status bar
-          _StatusBar(gps: gps, radio: radio, message: _statusMessage),
-
-          // Filters
+          _StatusBar(gps: gps, radio: radio),
           _FilterBar(
             bandFilter: _bandFilter,
             onlyOpen: _onlyOpen,
-            radiusMiles: _radiusMiles,
-            onBandChanged: (v) {
-              setState(() => _bandFilter = v);
-              _loadNearRepeaters(forceRefresh: false);
-            },
-            onOpenChanged: (v) {
-              setState(() => _onlyOpen = v);
-              _loadNearRepeaters(forceRefresh: false);
-            },
-            onRadiusChanged: (v) {
-              setState(() => _radiusMiles = v);
-              _loadNearRepeaters(forceRefresh: false);
-            },
-            bandOptions: _bandOptions,
+            onBandChanged: (v) => setState(() => _bandFilter = v),
+            onOpenChanged: (v) => setState(() => _onlyOpen = v),
           ),
-
-          // Repeater list
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _repeaters.isEmpty
-                    ? _EmptyState(onRefresh: () => _loadNearRepeaters(forceRefresh: true))
-                    : ListView.builder(
-                        itemCount: _repeaters.length,
-                        itemBuilder: (ctx, i) => _RepeaterTile(
-                          repeater: _repeaters[i],
-                          index: i,
-                          isTuning: _tuningIndex == i,
-                          radioConnected: radio.isConnected,
-                          onTune: () => _tuneToRepeater(_repeaters[i], i),
-                        ),
-                      ),
+                : _error != null
+                    ? _ErrorState(error: _error!, onRetry: _load)
+                    : list.isEmpty
+                        ? const _EmptyState()
+                        : ListView.builder(
+                            itemCount: list.length + 1,
+                            itemBuilder: (ctx, i) {
+                              if (i == list.length) return _attributionFooter();
+                              final r = list[i];
+                              return _RepeaterCard(
+                                repeater: r,
+                                isTuning: _tuningIndex == i,
+                                radioConnected: radio.isConnected,
+                                onTune: () => _tune(r, i),
+                              );
+                            },
+                          ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _attributionFooter() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Text(
+        'Repeater data © RepeaterBook.com · Colorado 2m/70cm · Exported 2026-03-03',
+        style: TextStyle(color: Colors.white24, fontSize: 10),
+        textAlign: TextAlign.center,
       ),
     );
   }
 }
 
-// ─── Sub-widgets ────────────────────────────────────────────────────────────
+// ─── Sub-widgets ──────────────────────────────────────────────────────────────
 
 class _StatusBar extends StatelessWidget {
   final GpsService gps;
   final RadioService radio;
-  final String? message;
 
-  const _StatusBar({required this.gps, required this.radio, this.message});
+  const _StatusBar({required this.gps, required this.radio});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.grey[900],
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       child: Row(
         children: [
           Icon(
             gps.hasPosition ? Icons.gps_fixed : Icons.gps_off,
-            size: 14,
+            size: 13,
             color: gps.hasPosition ? Colors.green : Colors.orange,
           ),
-          const SizedBox(width: 6),
-          Text(
-            gps.displayPosition,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Text(
+              gps.hasPosition ? gps.displayPosition : 'Waiting for GPS…',
+              style: const TextStyle(color: Colors.white60, fontSize: 11),
+            ),
           ),
-          const Spacer(),
           Icon(
             radio.isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-            size: 14,
+            size: 13,
             color: radio.isConnected ? Colors.blue : Colors.grey,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            message ?? (radio.isConnected ? 'Radio connected' : 'No radio'),
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -303,20 +329,14 @@ class _StatusBar extends StatelessWidget {
 class _FilterBar extends StatelessWidget {
   final String bandFilter;
   final bool onlyOpen;
-  final double radiusMiles;
   final ValueChanged<String> onBandChanged;
   final ValueChanged<bool> onOpenChanged;
-  final ValueChanged<double> onRadiusChanged;
-  final List<String> bandOptions;
 
   const _FilterBar({
     required this.bandFilter,
     required this.onlyOpen,
-    required this.radiusMiles,
     required this.onBandChanged,
     required this.onOpenChanged,
-    required this.onRadiusChanged,
-    required this.bandOptions,
   });
 
   @override
@@ -326,40 +346,29 @@ class _FilterBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
-          // Band filter chips
-          ...bandOptions.map((b) => Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
-                  label: Text(b, style: const TextStyle(fontSize: 12)),
-                  selected: bandFilter == b,
-                  onSelected: (_) => onBandChanged(b),
-                  selectedColor: Colors.blue[700],
-                  labelStyle: TextStyle(
-                    color: bandFilter == b ? Colors.white : Colors.white70,
-                  ),
+          for (final b in ['All', '2m', '70cm'])
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: ChoiceChip(
+                label: Text(b, style: const TextStyle(fontSize: 12)),
+                selected: bandFilter == b,
+                onSelected: (_) => onBandChanged(b),
+                selectedColor: b == '2m'
+                    ? Colors.green[700]
+                    : b == '70cm'
+                        ? Colors.blue[700]
+                        : Colors.grey[600],
+                labelStyle: TextStyle(
+                  color: bandFilter == b ? Colors.white : Colors.white70,
                 ),
-              )),
+              ),
+            ),
           const Spacer(),
-          // Open only toggle
-          Text('Open', style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const Text('Open', style: TextStyle(color: Colors.white70, fontSize: 12)),
           Switch(
             value: onlyOpen,
             onChanged: onOpenChanged,
-            activeColor: Colors.green,
-          ),
-          // Radius selector
-          DropdownButton<double>(
-            value: radiusMiles,
-            dropdownColor: Colors.grey[800],
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-            underline: const SizedBox(),
-            items: [25.0, 50.0, 100.0, 150.0]
-                .map((r) => DropdownMenuItem(
-                      value: r,
-                      child: Text('${r.round()} mi'),
-                    ))
-                .toList(),
-            onChanged: (v) => onRadiusChanged(v ?? radiusMiles),
+            activeThumbColor: Colors.green,
           ),
         ],
       ),
@@ -367,16 +376,14 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
-class _RepeaterTile extends StatelessWidget {
-  final Repeater repeater;
-  final int index;
+class _RepeaterCard extends StatelessWidget {
+  final _Repeater repeater;
   final bool isTuning;
   final bool radioConnected;
   final VoidCallback onTune;
 
-  const _RepeaterTile({
+  const _RepeaterCard({
     required this.repeater,
-    required this.index,
     required this.isTuning,
     required this.radioConnected,
     required this.onTune,
@@ -384,113 +391,160 @@ class _RepeaterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOnAir = repeater.isOnAir;
+    final r = repeater;
+    final freqStr = r.outputFreq.toStringAsFixed(3);
+    final distStr = r.distanceMiles > 0
+        ? '${r.distanceMiles.toStringAsFixed(1)} mi'
+        : '';
+    final toneStr = r.ctcssHz != null
+        ? 'PL ${r.ctcssHz!.toStringAsFixed(1)} Hz'
+        : 'No tone';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       color: Colors.grey[850],
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        leading: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              repeater.displayFreq.split(' ')[0], // Just the number
-              style: TextStyle(
-                color: isOnAir ? Colors.green[400] : Colors.orange[400],
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                fontFamily: 'monospace',
+            // Band badge
+            Container(
+              width: 36,
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              decoration: BoxDecoration(
+                color: r.band == '2m' ? Colors.green[900] : Colors.blue[900],
+                borderRadius: BorderRadius.circular(4),
               ),
-            ),
-            Text(
-              'MHz',
-              style: TextStyle(color: Colors.white54, fontSize: 10),
-            ),
-          ],
-        ),
-        title: Text(
-          repeater.sysname,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${repeater.city ?? ''}, ${repeater.state ?? ''}  •  ${repeater.callsign ?? ''}',
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
-              overflow: TextOverflow.ellipsis,
-            ),
-            Row(
-              children: [
-                _tag(repeater.displayTone, Colors.blue[700]!),
-                const SizedBox(width: 4),
-                if (repeater.displayDistance.isNotEmpty)
-                  _tag(repeater.displayDistance, Colors.purple[700]!),
-                const SizedBox(width: 4),
-                if (!isOnAir) _tag('OFF AIR', Colors.red[800]!),
-              ],
-            ),
-          ],
-        ),
-        trailing: isTuning
-            ? const SizedBox(
-                width: 24, height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : IconButton(
-                icon: Icon(
-                  Icons.radio,
-                  color: radioConnected ? Colors.blue[400] : Colors.grey,
+              child: Text(
+                r.band,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: r.band == '2m' ? Colors.green[300] : Colors.blue[300],
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
-                tooltip: 'Tune radio to this repeater',
-                onPressed: radioConnected ? onTune : null,
               ),
+            ),
+            const SizedBox(width: 10),
+
+            // Main info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        r.callsign,
+                        style: TextStyle(
+                          color: r.isOpen ? Colors.white : Colors.white38,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (distStr.isNotEmpty)
+                        Text(
+                          distStr,
+                          style: const TextStyle(color: Colors.white54, fontSize: 12),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$freqStr MHz  ${r.offsetDir}  $toneStr',
+                    style: TextStyle(
+                      color: Colors.green[400],
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    r.location,
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Tune button
+            isTuning
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    icon: Icon(
+                      Icons.radio,
+                      color: radioConnected ? Colors.blue[400] : Colors.grey,
+                    ),
+                    tooltip: 'Tune to this repeater',
+                    onPressed: radioConnected ? onTune : null,
+                    iconSize: 22,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
+          ],
+        ),
       ),
     );
   }
-
-  Widget _tag(String label, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(3),
-          border: Border.all(color: color, width: 0.5),
-        ),
-        child: Text(label, style: TextStyle(color: color, fontSize: 9)),
-      );
 }
 
 class _EmptyState extends StatelessWidget {
-  final VoidCallback onRefresh;
-  const _EmptyState({required this.onRefresh});
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cell_tower, size: 64, color: Colors.white24),
+          SizedBox(height: 12),
+          Text('No repeaters match filters',
+              style: TextStyle(color: Colors.white54, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.error, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.cell_tower, size: 64, color: Colors.white30),
-          const SizedBox(height: 16),
-          const Text(
-            'No repeaters found',
-            style: TextStyle(color: Colors.white54, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Check your GPS fix and internet connection,\nor try increasing the search radius.',
-            style: TextStyle(color: Colors.white38, fontSize: 13),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: onRefresh,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 12),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }

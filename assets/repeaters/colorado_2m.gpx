@@ -1,0 +1,2331 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?><gpx version="1.1" creator="RepeaterBook" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd">
+    <wpt lat="40.54" lon="-104.94">
+
+    <name>W0DMR 147.390000 147.390000+ </name>
+    <cmt>
+      Fort Collins W0DMR OPEN    </cmt>
+    <desc>
+      Fort Collins W0DMR OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.84" lon="-104.82">
+
+    <name>W0MOG 147.390000 147.390000+ 103.5</name>
+    <cmt>
+      Colorado Springs W0MOG OPEN    </cmt>
+    <desc>
+      Colorado Springs W0MOG OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.40" lon="-107.32">
+
+    <name>K0SNO 147.390000 147.390000+ 107.2</name>
+    <cmt>
+      Carbondale, Four Mile Ridge K0SNO OPEN    </cmt>
+    <desc>
+      Carbondale, Four Mile Ridge K0SNO OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.44390106" lon="-105.96900177">
+
+    <name>KB0VJJ 147.390000 147.390000+ 88.5</name>
+    <cmt>
+      Breckenridge KB0VJJ OPEN    </cmt>
+    <desc>
+      Breckenridge KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.17" lon="-104.50">
+
+    <name>K0BV 147.375000 147.375000+ 100.0</name>
+    <cmt>
+      Trinidad, Raton Pass K0BV OPEN    </cmt>
+    <desc>
+      Trinidad, Raton Pass K0BV OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.79330063" lon="-107.62899780">
+
+    <name>KB5ITS 147.375000 147.375000+ 156.7</name>
+    <cmt>
+      Silverton KB5ITS OPEN    </cmt>
+    <desc>
+      Silverton KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.04890060" lon="-105.51200104">
+
+    <name>KC0CVU 147.360000 147.360000+ 107.2</name>
+    <cmt>
+      Lake George, Badger Mtn KC0CVU OPEN    </cmt>
+    <desc>
+      Lake George, Badger Mtn KC0CVU OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.57" lon="-105.08">
+
+    <name>W0QEY 147.360000 147.360000+ 100.0</name>
+    <cmt>
+      Fort Collins, CSU W0QEY OPEN    </cmt>
+    <desc>
+      Fort Collins, CSU W0QEY OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.90" lon="-107.93">
+
+    <name>W0ALC 147.360000 147.360000+ 100.0</name>
+    <cmt>
+      Cedaredge W0ALC OPEN    </cmt>
+    <desc>
+      Cedaredge W0ALC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.66" lon="-106.46">
+
+    <name>KB0VJJ 147.345000 147.345000+ 88.5</name>
+    <cmt>
+      Vail KB0VJJ OPEN    </cmt>
+    <desc>
+      Vail KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.34999847" lon="-107.76699829">
+
+    <name>KB0VJJ 147.345000 147.345000+ 88.5</name>
+    <cmt>
+      Durango, Missionary Ridge KB0VJJ OPEN    </cmt>
+    <desc>
+      Durango, Missionary Ridge KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.73720169" lon="-104.87999725">
+
+    <name>KC0CVU 147.345000 147.345000+ 107.2</name>
+    <cmt>
+      Colorado Springs, Cheyenne Mtn KC0CVU OPEN    </cmt>
+    <desc>
+      Colorado Springs, Cheyenne Mtn KC0CVU OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.41" lon="-102.61">
+
+    <name>KZ0DEM 147.330000 147.330000+ 118.8</name>
+    <cmt>
+      Springfield KZ0DEM OPEN    </cmt>
+    <desc>
+      Springfield KZ0DEM OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.87" lon="-107.59">
+
+    <name>KI0MR 147.330000 147.330000+ 107.2</name>
+    <cmt>
+      Paonia KI0MR OPEN    </cmt>
+    <desc>
+      Paonia KI0MR OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.68" lon="-105.14">
+
+    <name>W0TX 147.330000 147.330000+ 100.0</name>
+    <cmt>
+      Lakewood, Green Mtn W0TX OPEN    </cmt>
+    <desc>
+      Lakewood, Green Mtn W0TX OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.67810059" lon="-105.48699951">
+
+    <name>N0PYY 147.300000 147.300000+ 103.5</name>
+    <cmt>
+      Idaho Springs, Mestaa ehehe Mtn N0PYY OPEN    </cmt>
+    <desc>
+      Idaho Springs, Mestaa ehehe Mtn N0PYY OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.35892400" lon="-108.55875500">
+
+    <name>K0VQ 147.300000 147.300000+ 107.2</name>
+    <cmt>
+      Cortez, Arbor St. K0VQ OPEN    </cmt>
+    <desc>
+      Cortez, Arbor St. K0VQ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.89" lon="-105.76">
+
+    <name>KB0VJJ 147.285000 147.285000+ 88.5</name>
+    <cmt>
+      Winter Park KB0VJJ OPEN    </cmt>
+    <desc>
+      Winter Park KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.46" lon="-106.01">
+
+    <name>KB0VJJ 147.285000 147.285000+ 88.5</name>
+    <cmt>
+      Salida, Methodist Mtn KB0VJJ OPEN    </cmt>
+    <desc>
+      Salida, Methodist Mtn KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.70" lon="-107.81">
+
+    <name>KB5ITS 147.270000 147.270000+ 127.3</name>
+    <cmt>
+      Silverton KB5ITS OPEN    </cmt>
+    <desc>
+      Silverton KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.02" lon="-107.67">
+
+    <name> 147.270000 147.270000+ 127.3</name>
+    <cmt>
+      Ouray, Engineer Mtn  OPEN    </cmt>
+    <desc>
+      Ouray, Engineer Mtn  OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.16323482" lon="-105.10141920">
+
+    <name>W0ENO 147.270000 147.270000+ 100.0</name>
+    <cmt>
+      Longmont W0ENO OPEN    </cmt>
+    <desc>
+      Longmont W0ENO OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.25" lon="-106.29">
+
+    <name>N0ZSN 147.240000 147.240000+ 156.7</name>
+    <cmt>
+      Leadville, Quail Mtn N0ZSN OPEN    </cmt>
+    <desc>
+      Leadville, Quail Mtn N0ZSN OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.36059952" lon="-105.51999664">
+
+    <name>KB0VGD 147.240000 147.240000+ </name>
+    <cmt>
+      Estes Park KB0VGD OPEN    </cmt>
+    <desc>
+      Estes Park KB0VGD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.17549896" lon="-105.03399658">
+
+    <name>W0CRA 147.225000 147.225000+ 107.2</name>
+    <cmt>
+      Larkspur, Westcreek W0CRA OPEN    </cmt>
+    <desc>
+      Larkspur, Westcreek W0CRA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.03" lon="-105.52">
+
+    <name>N0SDC 147.210000 147.210000+ 100.0</name>
+    <cmt>
+      Westcliffe, Wet Mountain Valley N0SDC OPEN    </cmt>
+    <desc>
+      Westcliffe, Wet Mountain Valley N0SDC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.44929210" lon="-106.74929200">
+
+    <name>KD0H 147.210000 147.210000+ 107.2</name>
+    <cmt>
+      Steamboat Springs KD0H OPEN    </cmt>
+    <desc>
+      Steamboat Springs KD0H OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.75049973" lon="-105.12300110">
+
+    <name>KD0SSP 147.210000 147.210000+ 100.0</name>
+    <cmt>
+      Lakewood, Moffat Treatment Plant KD0SSP OPEN    </cmt>
+    <desc>
+      Lakewood, Moffat Treatment Plant KD0SSP OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.40" lon="-105.13">
+
+    <name>W0LRA 147.195000 147.195000+ 100.0</name>
+    <cmt>
+      Loveland, Namaqua Hill W0LRA OPEN    </cmt>
+    <desc>
+      Loveland, Namaqua Hill W0LRA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.90" lon="-107.93">
+
+    <name>KC0QXX 147.195000 147.195000+ 107.2</name>
+    <cmt>
+      Cedaredge, Cedar Mesa KC0QXX OPEN    </cmt>
+    <desc>
+      Cedaredge, Cedar Mesa KC0QXX OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.77249908" lon="-104.99299622">
+
+    <name>AA0SP 147.180000 147.180000+ 100.0</name>
+    <cmt>
+      Colorado Springs, Almagre Mtn AA0SP PRIVATE    </cmt>
+    <desc>
+      Colorado Springs, Almagre Mtn AA0SP PRIVATE    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.35" lon="-108.59">
+
+    <name>K0VQ 147.165000 147.165000+ 156.7</name>
+    <cmt>
+      Cortez K0VQ OPEN    </cmt>
+    <desc>
+      Cortez K0VQ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.04" lon="-102.60">
+
+    <name>W0CTS 147.150000 147.150000+ 123.0</name>
+    <cmt>
+      Lamar W0CTS OPEN    </cmt>
+    <desc>
+      Lamar W0CTS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.12" lon="-107.63">
+
+    <name>KB5ITS 147.150000 147.150000+ 100.0</name>
+    <cmt>
+      Ignacio, Spring Creek KB5ITS OPEN    </cmt>
+    <desc>
+      Ignacio, Spring Creek KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.77719879" lon="-105.32900238">
+
+    <name>W0UAW 147.150000 147.150000+ 100.0</name>
+    <cmt>
+      Golden, Guy Hill W0UAW OPEN    </cmt>
+    <desc>
+      Golden, Guy Hill W0UAW OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.03" lon="-107.32">
+
+    <name>KB5ITS 147.135000 147.135000+ 123.0</name>
+    <cmt>
+      Lake City, Hill 71 KB5ITS OPEN    </cmt>
+    <desc>
+      Lake City, Hill 71 KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.26219940" lon="-107.90599823">
+
+    <name>KB5ITS 147.135000 147.135000+ 100.0</name>
+    <cmt>
+      Durango, Smelter Mtn KB5ITS OPEN    </cmt>
+    <desc>
+      Durango, Smelter Mtn KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.83969879" lon="-104.80000305">
+
+    <name>AA0L 147.135000 147.135000+ 100.0</name>
+    <cmt>
+      Colorado Springs AA0L OPEN    </cmt>
+    <desc>
+      Colorado Springs AA0L OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.55" lon="-106.93">
+
+    <name>WB0QCL 147.120000 147.120000+ </name>
+    <cmt>
+      Gunnison WB0QCL OPEN    </cmt>
+    <desc>
+      Gunnison WB0QCL OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.51480103" lon="-105.35299683">
+
+    <name>N0ARA 147.120000 147.120000+ 88.5</name>
+    <cmt>
+      Critchell, Critchell Mtn N0ARA OPEN    </cmt>
+    <desc>
+      Critchell, Critchell Mtn N0ARA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.22669983" lon="-104.08999634">
+
+    <name>WA0DE 147.105000 147.105000+ 107.2</name>
+    <cmt>
+      Simla WA0DE OPEN    </cmt>
+    <desc>
+      Simla WA0DE OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.24" lon="-106.02">
+
+    <name>AB0PC 147.090000 147.090000+ 100.0</name>
+    <cmt>
+      Fairplay, Beaver Ridge AB0PC OPEN    </cmt>
+    <desc>
+      Fairplay, Beaver Ridge AB0PC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.13600159" lon="-104.92700195">
+
+    <name>N0XLF 147.075000 147.075000+ 131.8</name>
+    <cmt>
+      Palmer Lake, Monument Hill N0XLF OPEN    </cmt>
+    <desc>
+      Palmer Lake, Monument Hill N0XLF OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.06" lon="-106.39">
+
+    <name>KB0VJJ 147.075000 147.075000+ 88.5</name>
+    <cmt>
+      Kremmling, Santoy Peak KB0VJJ OPEN    </cmt>
+    <desc>
+      Kremmling, Santoy Peak KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.26879883" lon="-103.48799896">
+
+    <name>KE0AE 147.060000 147.060000+ 103.5</name>
+    <cmt>
+      Genoa KE0AE OPEN    </cmt>
+    <desc>
+      Genoa KE0AE OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.89" lon="-104.99">
+
+    <name>K0ML 147.045000 147.045000+ 123.0</name>
+    <cmt>
+      Northglenn K0ML OPEN    </cmt>
+    <desc>
+      Northglenn K0ML OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.93" lon="-104.61">
+
+    <name>KB9UZO 147.030000 147.030000+ 250.3</name>
+    <cmt>
+      Falcon KB9UZO OPEN    </cmt>
+    <desc>
+      Falcon KB9UZO OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.17269897" lon="-105.46800232">
+
+    <name>KI0HG 147.030000 147.030000+ 100.0</name>
+    <cmt>
+      Allenspark, AFPD Sta 5 KI0HG OPEN    </cmt>
+    <desc>
+      Allenspark, AFPD Sta 5 KI0HG OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.75" lon="-105.18">
+
+    <name>NX0G 147.015000 147.015000+ 107.2</name>
+    <cmt>
+      Cripple Creek NX0G OPEN    </cmt>
+    <desc>
+      Cripple Creek NX0G OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.30690002" lon="-104.62000275">
+
+    <name>NE0Z 147.000000 147.000000+ CSQ</name>
+    <cmt>
+      Pueblo, CSU NE0Z PRIVATE    </cmt>
+    <desc>
+      Pueblo, CSU NE0Z PRIVATE    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.26113900" lon="-104.70630600">
+
+    <name>KC0KWD 147.000000 147.000000+ 100.0</name>
+    <cmt>
+      Gilcrest KC0KWD OPEN    </cmt>
+    <desc>
+      Gilcrest KC0KWD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.75249863" lon="-105.35900116">
+
+    <name>K0FEZ 146.985000 146.985000- 100.0</name>
+    <cmt>
+      Golden, Centennial Cone K0FEZ OPEN    </cmt>
+    <desc>
+      Golden, Centennial Cone K0FEZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.84000015" lon="-105.04000092">
+
+    <name>K0ESD 146.970000 146.970000- 100.0</name>
+    <cmt>
+      Colorado Springs, Pikes Peak K0ESD OPEN    </cmt>
+    <desc>
+      Colorado Springs, Pikes Peak K0ESD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.58" lon="-102.30">
+
+    <name>N0FON 146.955000 146.955000- 100.0</name>
+    <cmt>
+      Holyoke N0FON OPEN    </cmt>
+    <desc>
+      Holyoke N0FON OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.67979813" lon="-105.49299622">
+
+    <name>W0WYX 146.940000 146.940000- 103.5</name>
+    <cmt>
+      Idaho Springs, Mestaa ehehe Mtn W0WYX OPEN    </cmt>
+    <desc>
+      Idaho Springs, Mestaa ehehe Mtn W0WYX OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.06560135" lon="-108.74800110">
+
+    <name>W0RRZ 146.940000 146.940000- 107.2</name>
+    <cmt>
+      Grand Junction, Black Ridge W0RRZ OPEN    </cmt>
+    <desc>
+      Grand Junction, Black Ridge W0RRZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.48" lon="-107.88">
+
+    <name>KE0VEV 146.910000 146.910000- 107.2</name>
+    <cmt>
+      Montrose KE0VEV OPEN    </cmt>
+    <desc>
+      Montrose KE0VEV OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.06330109" lon="-105.41000366">
+
+    <name>W0JZ 146.910000 146.910000- 123.0</name>
+    <cmt>
+      Gold Hill W0JZ OPEN    </cmt>
+    <desc>
+      Gold Hill W0JZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.84" lon="-104.82">
+
+    <name>K0IRP 146.910000 146.910000- 151.4</name>
+    <cmt>
+      Colorado Springs K0IRP OPEN    </cmt>
+    <desc>
+      Colorado Springs K0IRP OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.30329895" lon="-102.60500336">
+
+    <name>KE0AE 146.895000 146.895000- 103.5</name>
+    <cmt>
+      Stratton KE0AE OPEN    </cmt>
+    <desc>
+      Stratton KE0AE OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.41" lon="-105.47">
+
+    <name>AB0PC 146.895000 146.895000- 100.0</name>
+    <cmt>
+      Bailey, Dick Mtn AB0PC OPEN    </cmt>
+    <desc>
+      Bailey, Dick Mtn AB0PC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.20700073" lon="-104.70700073">
+
+    <name>W0PHC 146.880000 146.880000- 88.5</name>
+    <cmt>
+      Pueblo, 12 Mile Hill W0PHC OPEN    </cmt>
+    <desc>
+      Pueblo, 12 Mile Hill W0PHC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.43" lon="-107.38">
+
+    <name>K0RV 146.880000 146.880000- 107.2</name>
+    <cmt>
+      Glenwood Springs, Sunlight Peak K0RV OPEN    </cmt>
+    <desc>
+      Glenwood Springs, Sunlight Peak K0RV OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.50419998" lon="-105.12799835">
+
+    <name>KE0NCQ 146.880000 146.880000- CSQ</name>
+    <cmt>
+      Centennial, Warren Mtn KE0NCQ OPEN    </cmt>
+    <desc>
+      Centennial, Warren Mtn KE0NCQ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.71388889" lon="-104.77916660">
+
+    <name>W0UPS 146.850000 146.850000- 100.0</name>
+    <cmt>
+      Nunn W0UPS OPEN    </cmt>
+    <desc>
+      Nunn W0UPS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.42639923" lon="-107.37999725">
+
+    <name>KB0VJJ 146.850000 146.850000- 88.5</name>
+    <cmt>
+      Glenwood Springs, Sunlight Peak KB0VJJ OPEN    </cmt>
+    <desc>
+      Glenwood Springs, Sunlight Peak KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.73700000" lon="-104.71550000">
+
+    <name>AD0TP 146.850000 146.850000- 156.7</name>
+    <cmt>
+      Colorado Springs AD0TP OPEN    </cmt>
+    <desc>
+      Colorado Springs AD0TP OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.99" lon="-105.06">
+
+    <name>NX0G 146.820000 146.820000- 107.2</name>
+    <cmt>
+      Woodland Park NX0G OPEN    </cmt>
+    <desc>
+      Woodland Park NX0G OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.06" lon="-108.55">
+
+    <name>W0GJT 146.820000 146.820000- 107.2</name>
+    <cmt>
+      Grand Junction W0GJT OPEN    </cmt>
+    <desc>
+      Grand Junction W0GJT OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.09" lon="-105.94">
+
+    <name>KA0YDW 146.820000 146.820000- 123.0</name>
+    <cmt>
+      Granby KA0YDW OPEN    </cmt>
+    <desc>
+      Granby KA0YDW OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.07580185" lon="-102.22299957">
+
+    <name>AE0LE 146.790000 146.790000- 100.0</name>
+    <cmt>
+      Wray AE0LE OPEN    </cmt>
+    <desc>
+      Wray AE0LE OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.36240005" lon="-104.55999756">
+
+    <name>W0PHC 146.790000 146.790000- 88.5</name>
+    <cmt>
+      Pueblo, Baculite Mesa W0PHC OPEN    </cmt>
+    <desc>
+      Pueblo, Baculite Mesa W0PHC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.07828200" lon="-107.19763500">
+
+    <name>K3NI 146.760000 146.760000- 107.2</name>
+    <cmt>
+      Marble K3NI OPEN    </cmt>
+    <desc>
+      Marble K3NI OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.73720169" lon="-104.88099670">
+
+    <name>K0ESD 146.760000 146.760000- 107.2</name>
+    <cmt>
+      Colorado Springs, Cheyenne Mtn K0ESD OPEN    </cmt>
+    <desc>
+      Colorado Springs, Cheyenne Mtn K0ESD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.05559921" lon="-105.15699768">
+
+    <name>W0IA 146.760000 146.760000- 100.0</name>
+    <cmt>
+      Boulder, Gunbarrel Hill W0IA OPEN    </cmt>
+    <desc>
+      Boulder, Gunbarrel Hill W0IA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.71" lon="-106.20">
+
+    <name>W0LSD 146.745000 146.745000- 100.0</name>
+    <cmt>
+      Nathrop W0LSD OPEN    </cmt>
+    <desc>
+      Nathrop W0LSD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.77190018" lon="-104.45600128">
+
+    <name>W0PHC 146.730000 146.730000- 88.5</name>
+    <cmt>
+      Walsenburg, N Rattlesnake Butte W0PHC OPEN    </cmt>
+    <desc>
+      Walsenburg, N Rattlesnake Butte W0PHC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.61" lon="-105.32">
+
+    <name>KB0VJJ 146.730000 146.730000- 88.5</name>
+    <cmt>
+      Fort Collins, Buckhorn Mtn KB0VJJ OPEN    </cmt>
+    <desc>
+      Fort Collins, Buckhorn Mtn KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.74" lon="-104.98">
+
+    <name>N0JXN 146.715000 146.715000- 123.0</name>
+    <cmt>
+      Denver N0JXN OPEN    </cmt>
+    <desc>
+      Denver N0JXN OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.38230000" lon="-106.41100000">
+
+    <name>WB0QMR 146.700000 146.700000- 107.2</name>
+    <cmt>
+      Silverthorne WB0QMR OPEN    </cmt>
+    <desc>
+      Silverthorne WB0QMR OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.99" lon="-103.54">
+
+    <name>N0AVH 146.700000 146.700000- 123.0</name>
+    <cmt>
+      La Junta, La Junta Airbase Hill N0AVH OPEN    </cmt>
+    <desc>
+      La Junta, La Junta Airbase Hill N0AVH OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.38" lon="-107.78">
+
+    <name>K0EP 146.700000 146.700000- 100.0</name>
+    <cmt>
+      Durango, Missionary Ridge K0EP OPEN    </cmt>
+    <desc>
+      Durango, Missionary Ridge K0EP OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.97750092" lon="-105.27899933">
+
+    <name>W0DK 146.700000 146.700000- 100.0</name>
+    <cmt>
+      Boulder, NCAR W0DK OPEN    </cmt>
+    <desc>
+      Boulder, NCAR W0DK OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.04940033" lon="-105.51300049">
+
+    <name>NX0G 146.685000 146.685000- 107.2</name>
+    <cmt>
+      Lake George, Badger Mtn NX0G OPEN    </cmt>
+    <desc>
+      Lake George, Badger Mtn NX0G OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.36009979" lon="-105.45099640">
+
+    <name>N0FH 146.685000 146.685000- 123.0</name>
+    <cmt>
+      Estes Park N0FH OPEN    </cmt>
+    <desc>
+      Estes Park N0FH OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.21" lon="-106.94">
+
+    <name>K0RV 146.670000 146.670000- 107.2</name>
+    <cmt>
+      Snowmass Village K0RV OPEN    </cmt>
+    <desc>
+      Snowmass Village K0RV OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.68" lon="-105.49">
+
+    <name>KB0UDD 146.670000 146.670000- 100.0</name>
+    <cmt>
+      Idaho Springs, Mestaa ehehe Mtn KB0UDD OPEN    </cmt>
+    <desc>
+      Idaho Springs, Mestaa ehehe Mtn KB0UDD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.42" lon="-108.01">
+
+    <name>K0EP 146.670000 146.670000- 100.0</name>
+    <cmt>
+      Durango, Eagle Pass K0EP OPEN    </cmt>
+    <desc>
+      Durango, Eagle Pass K0EP OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.25" lon="-104.61">
+
+    <name>K0ST 146.655000 146.655000- 123.0</name>
+    <cmt>
+      Pueblo K0ST OPEN    </cmt>
+    <desc>
+      Pueblo K0ST OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.37" lon="-102.86">
+
+    <name>KZ0DEM 146.640000 146.640000- 100.0</name>
+    <cmt>
+      Pritchett, Tator Butte KZ0DEM OPEN    </cmt>
+    <desc>
+      Pritchett, Tator Butte KZ0DEM OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.75249863" lon="-105.35900116">
+
+    <name>KE0NCQ 146.640000 146.640000- 100.0</name>
+    <cmt>
+      Golden, Centennial Cone KE0NCQ OPEN    </cmt>
+    <desc>
+      Golden, Centennial Cone KE0NCQ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.75" lon="-106.11">
+
+    <name>N0KM 146.640000 146.640000- 77.0</name>
+    <cmt>
+      Center N0KM OPEN    </cmt>
+    <desc>
+      Center N0KM OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.61700058" lon="-105.32700348">
+
+    <name>W0UPS 146.625000 146.625000- 100.0</name>
+    <cmt>
+      Fort Collins, Buckhorn Mtn W0UPS OPEN    </cmt>
+    <desc>
+      Fort Collins, Buckhorn Mtn W0UPS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.61" lon="-106.36">
+
+    <name>K0RV 146.610000 146.610000- 107.2</name>
+    <cmt>
+      Vail, Bald Mtn K0RV OPEN    </cmt>
+    <desc>
+      Vail, Bald Mtn K0RV OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.19300079" lon="-107.09999847">
+
+    <name>N0JSP 146.610000 146.610000- 123.0</name>
+    <cmt>
+      Pagosa Springs, Oakbrush Hill N0JSP OPEN    </cmt>
+    <desc>
+      Pagosa Springs, Oakbrush Hill N0JSP OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.24820300" lon="-105.26697500">
+
+    <name>W0DK 146.610000 146.610000- 100.0</name>
+    <cmt>
+      Lyons W0DK OPEN    </cmt>
+    <desc>
+      Lyons W0DK OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.12803300" lon="-102.53180300">
+
+    <name>N0LAR 146.610000 146.610000- 100.0</name>
+    <cmt>
+      Lamar N0LAR OPEN    </cmt>
+    <desc>
+      Lamar N0LAR OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.68" lon="-105.49">
+
+    <name>W0TX 145.490000 145.490000- 100.0</name>
+    <cmt>
+      Golden, Centennial Cone W0TX OPEN    </cmt>
+    <desc>
+      Golden, Centennial Cone W0TX OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.45420074" lon="-105.29000092">
+
+    <name>WD0EKR 145.490000 145.490000- 103.5</name>
+    <cmt>
+      Canon City, Fremont Peak WD0EKR OPEN    </cmt>
+    <desc>
+      Canon City, Fremont Peak WD0EKR OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.86793300" lon="-105.30474700">
+
+    <name>KE0SJ 145.475000 145.475000- 100.0</name>
+    <cmt>
+      Boulder, Blue Mtn KE0SJ OPEN    </cmt>
+    <desc>
+      Boulder, Blue Mtn KE0SJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.35722450" lon="-105.47566519">
+
+    <name>KB0TUC 145.460000 145.460000- 100.0</name>
+    <cmt>
+      Cotopaxi KB0TUC OPEN    </cmt>
+    <desc>
+      Cotopaxi KB0TUC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.91317000" lon="-105.29333000">
+
+    <name>W0CRA 145.460000 145.460000- 107.2</name>
+    <cmt>
+      Boulder, Eldorado Mtn W0CRA OPEN    </cmt>
+    <desc>
+      Boulder, Eldorado Mtn W0CRA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.28" lon="-106.19">
+
+    <name>KB0VJJ 145.445000 145.445000- 88.5</name>
+    <cmt>
+      Leadville, Mosquito Pass KB0VJJ OPEN    </cmt>
+    <desc>
+      Leadville, Mosquito Pass KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.00" lon="-104.47">
+
+    <name>KC0CVU 145.430000 145.430000- 107.2</name>
+    <cmt>
+      Trinidad, Raton Pass KC0CVU OPEN    </cmt>
+    <desc>
+      Trinidad, Raton Pass KC0CVU OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.75" lon="-104.99">
+
+    <name>KB0VJJ 145.430000 145.430000- 88.5</name>
+    <cmt>
+      Denver, Downtown KB0VJJ OPEN    </cmt>
+    <desc>
+      Denver, Downtown KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.61" lon="-104.74">
+
+    <name>KB0UDD 145.400000 145.400000- 100.0</name>
+    <cmt>
+      Aurora, Smoky Hill KB0UDD OPEN    </cmt>
+    <desc>
+      Aurora, Smoky Hill KB0UDD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.16" lon="-103.21">
+
+    <name>KB0VJJ 145.400000 145.400000- 88.5</name>
+    <cmt>
+      Akron KB0VJJ OPEN    </cmt>
+    <desc>
+      Akron KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.29999924" lon="-108.02799988">
+
+    <name>KB0VIU 145.370000 145.370000- 100.0</name>
+    <cmt>
+      Hesperus KB0VIU OPEN    </cmt>
+    <desc>
+      Hesperus KB0VIU OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.73070145" lon="-105.23300171">
+
+    <name>N0SZ 145.370000 145.370000- </name>
+    <cmt>
+      Golden, Lookout Mtn N0SZ OPEN    </cmt>
+    <desc>
+      Golden, Lookout Mtn N0SZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.28550722" lon="-104.94772222">
+
+    <name>KD0SBN 145.355000 145.355000- 107.2</name>
+    <cmt>
+      Weston KD0SBN OPEN    </cmt>
+    <desc>
+      Weston KD0SBN OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.07" lon="-107.94">
+
+    <name>KB0VJJ 145.355000 145.355000- 88.5</name>
+    <cmt>
+      Grand Junction, Grand Mesa KB0VJJ OPEN    </cmt>
+    <desc>
+      Grand Junction, Grand Mesa KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.63" lon="-105.32">
+
+    <name>KE4GUQ 145.340000 145.340000- 103.5</name>
+    <cmt>
+      Evergreen KE4GUQ OPEN    </cmt>
+    <desc>
+      Evergreen KE4GUQ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.81" lon="-107.67">
+
+    <name>KB5ITS 145.325000 145.325000- 127.3</name>
+    <cmt>
+      Silverton, Buffalo Boy KB5ITS OPEN    </cmt>
+    <desc>
+      Silverton, Buffalo Boy KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.51" lon="-106.35">
+
+    <name>KD0MRC 145.325000 145.325000- 100.0</name>
+    <cmt>
+      Maysville KD0MRC OPEN    </cmt>
+    <desc>
+      Maysville KD0MRC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.36500000" lon="-108.14700000">
+
+    <name>KB5ITS 145.325000 145.325000- 100.0</name>
+    <cmt>
+      Mancos, Caviness Mtn KB5ITS OPEN    </cmt>
+    <desc>
+      Mancos, Caviness Mtn KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.88750076" lon="-105.42600250">
+
+    <name>KB0VJJ 145.310000 145.310000- 88.5</name>
+    <cmt>
+      Boulder, Thorodin Mtn KB0VJJ OPEN    </cmt>
+    <desc>
+      Boulder, Thorodin Mtn KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.63" lon="-103.21">
+
+    <name>WA0JTB 145.295000 145.295000- 100.0</name>
+    <cmt>
+      Sterling WA0JTB OPEN    </cmt>
+    <desc>
+      Sterling WA0JTB OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.45959854" lon="-106.01100159">
+
+    <name>KC0CVU 145.295000 145.295000- 107.2</name>
+    <cmt>
+      Salida, Methodist Mtn KC0CVU OPEN    </cmt>
+    <desc>
+      Salida, Methodist Mtn KC0CVU OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.25" lon="-104.61">
+
+    <name>WB0SLW 145.280000 145.280000- 100.0</name>
+    <cmt>
+      Pueblo WB0SLW OPEN    </cmt>
+    <desc>
+      Pueblo WB0SLW OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.75249863" lon="-105.35900116">
+
+    <name>KE0SJ 145.280000 145.280000- 100.0</name>
+    <cmt>
+      Golden, Centennial Cone KE0SJ OPEN    </cmt>
+    <desc>
+      Golden, Centennial Cone KE0SJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.54" lon="-105.18">
+
+    <name>KB0VGD 145.265000 145.265000- </name>
+    <cmt>
+      Fort Collins, Horsetooth Mtn KB0VGD OPEN    </cmt>
+    <desc>
+      Fort Collins, Horsetooth Mtn KB0VGD OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.45" lon="-106.75">
+
+    <name>N0PRG 145.250000 145.250000- 103.5</name>
+    <cmt>
+      Steamboat Springs, Sunshine Peak N0PRG OPEN    </cmt>
+    <desc>
+      Steamboat Springs, Sunshine Peak N0PRG OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.68" lon="-105.49">
+
+    <name>K0PRA 145.250000 145.250000- 100.0</name>
+    <cmt>
+      Idaho Springs, Middle Mestaa ehehe Mtn K0PRA OPEN    </cmt>
+    <desc>
+      Idaho Springs, Middle Mestaa ehehe Mtn K0PRA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.31" lon="-102.27">
+
+    <name>KB0VJJ 145.250000 145.250000- 88.5</name>
+    <cmt>
+      Burlington KB0VJJ OPEN    </cmt>
+    <desc>
+      Burlington KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.77199936" lon="-104.99299622">
+
+    <name>N0SZ 145.235000 145.235000- </name>
+    <cmt>
+      Colorado Springs, Almagre Mtn N0SZ OPEN    </cmt>
+    <desc>
+      Colorado Springs, Almagre Mtn N0SZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.77719879" lon="-105.32800293">
+
+    <name>WT0C 145.220000 145.220000- 103.5</name>
+    <cmt>
+      Golden, Guy Hill WT0C OPEN    </cmt>
+    <desc>
+      Golden, Guy Hill WT0C OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="37.47389984" lon="-108.50499725">
+
+    <name>KB5ITS 145.190000 145.190000- 100.0</name>
+    <cmt>
+      Cortez KB5ITS OPEN    </cmt>
+    <desc>
+      Cortez KB5ITS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.62799835" lon="-104.75800323">
+
+    <name>N0OBA 145.190000 145.190000- 71.9</name>
+    <cmt>
+      Aurora N0OBA OPEN    </cmt>
+    <desc>
+      Aurora N0OBA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.63330078" lon="-105.31700134">
+
+    <name>N0SZ 145.175000 145.175000- </name>
+    <cmt>
+      Idaho Springs, Mestaa ehehe Mtn N0SZ OPEN    </cmt>
+    <desc>
+      Idaho Springs, Mestaa ehehe Mtn N0SZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.08933300" lon="-108.22658000">
+
+    <name>W0RRZ 145.175000 145.175000- 107.2</name>
+    <cmt>
+      Grand Junction, GJT W0RRZ OPEN    </cmt>
+    <desc>
+      Grand Junction, GJT W0RRZ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.65" lon="-106.38">
+
+    <name>KB0VJJ 145.160000 145.160000- 88.5</name>
+    <cmt>
+      Walden, Peterson Ridge KB0VJJ OPEN    </cmt>
+    <desc>
+      Walden, Peterson Ridge KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.74" lon="-104.88">
+
+    <name>W0CRA 145.160000 145.160000- 107.2</name>
+    <cmt>
+      Colorado Springs, Cheyenne Mtn W0CRA OPEN    </cmt>
+    <desc>
+      Colorado Springs, Cheyenne Mtn W0CRA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.68" lon="-105.49">
+
+    <name>W0CRA 145.145000 145.145000- 107.2</name>
+    <cmt>
+      Idaho Springs, Mestaa ehehe Mtn W0CRA OPEN    </cmt>
+    <desc>
+      Idaho Springs, Mestaa ehehe Mtn W0CRA OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.75" lon="-104.86">
+
+    <name>KB0VJJ 145.130000 145.130000- 88.5</name>
+    <cmt>
+      Colorado Springs, Cheyenne Mtn KB0VJJ OPEN    </cmt>
+    <desc>
+      Colorado Springs, Cheyenne Mtn KB0VJJ OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="38.25210190" lon="-104.66200256">
+
+    <name>W0PHC 145.115000 145.115000- 88.5</name>
+    <cmt>
+      Pueblo W0PHC OPEN    </cmt>
+    <desc>
+      Pueblo W0PHC OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="40.53969955" lon="-105.19599915">
+
+    <name>W0UPS 145.115000 145.115000- 100.0</name>
+    <cmt>
+      Fort Collins, Horsetooth Mtn W0UPS OPEN    </cmt>
+    <desc>
+      Fort Collins, Horsetooth Mtn W0UPS OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+    <wpt lat="39.66" lon="-102.85">
+
+    <name>AE0LE 145.115000 145.115000- 100.0</name>
+    <cmt>
+      Cope AE0LE OPEN    </cmt>
+    <desc>
+      Cope AE0LE OPEN    </desc>
+    <sym>Tall Tower</sym>
+    <extensions>
+      <gpxx:WaypointExtension>
+        <gpxx:DisplayMode>SymbolAndName</gpxx:DisplayMode>
+        <gpxx:Categories>
+          <gpxx:Category>REPEATERS</gpxx:Category>
+        </gpxx:Categories>
+      </gpxx:WaypointExtension>
+    </extensions>
+  </wpt>
+</gpx>

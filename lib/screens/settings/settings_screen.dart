@@ -3,7 +3,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../bluetooth/radio_service.dart';
+import 'tracks_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,6 +16,26 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isScanning = false;
+  String _callsign = '';
+  String _sameCode = '';
+  String _spotterAppId = '4f2e07d475ae4';
+  bool _igateEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _callsign     = prefs.getString('callsign')        ?? '';
+      _sameCode     = prefs.getString('same_code')       ?? '';
+      _spotterAppId = prefs.getString('spotter_app_id')  ?? '4f2e07d475ae4';
+      _igateEnabled = prefs.getBool('igate_enabled')     ?? false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,15 +94,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
             )),
           ],
 
-          // ─── App Settings ────────────────────────────
-          _SectionHeader('App Settings'),
+          // ─── Callsign ────────────────────────────────
+          _SectionHeader('Station Identity'),
           ListTile(
-            leading: const Icon(Icons.my_location, color: Colors.green),
+            leading: const Icon(Icons.badge_outlined, color: Colors.green),
             title: const Text('Callsign', style: TextStyle(color: Colors.white)),
-            subtitle: const Text('Set your callsign for APRS', style: TextStyle(color: Colors.white54)),
+            subtitle: Text(
+              _callsign.isEmpty ? 'Not set' : _callsign,
+              style: TextStyle(
+                color: _callsign.isEmpty ? Colors.white38 : Colors.green[300],
+              ),
+            ),
             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
             onTap: () => _editCallsign(context),
           ),
+          ListTile(
+            leading: const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            title: const Text('SAME Code', style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              _sameCode.isEmpty ? 'Not set (county alert filter)' : _sameCode,
+              style: TextStyle(
+                color: _sameCode.isEmpty ? Colors.white38 : Colors.orange[300],
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => _editSameCode(context),
+          ),
+
+          // ─── APRS iGate ──────────────────────────────
+          _SectionHeader('APRS iGate'),
+          SwitchListTile(
+            secondary: Icon(
+              Icons.router_outlined,
+              color: _igateEnabled ? Colors.green : Colors.grey,
+            ),
+            title: const Text('Enable iGate', style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              _igateEnabled
+                  ? 'Forwarding packets → noam.aprs2.net'
+                  : 'Forwards received APRS frames to the internet',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            value: _igateEnabled,
+            onChanged: (v) => _setIgateEnabled(v),
+          ),
+
+          // ─── Spotter Network ─────────────────────────
+          _SectionHeader('Spotter Network'),
+          ListTile(
+            leading: const Icon(Icons.cloud_outlined, color: Colors.orange),
+            title: const Text('App ID', style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              _spotterAppId,
+              style: const TextStyle(color: Colors.white38, fontSize: 11, fontFamily: 'monospace'),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => _editSpotterAppId(context),
+          ),
+
+          // ─── Track Recording ─────────────────────────
+          _SectionHeader('Track Recording'),
+          ListTile(
+            leading: const Icon(Icons.route, color: Colors.green),
+            title: const Text('View Saved Tracks', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Browse, share, or delete GPX files',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const TracksScreen())),
+          ),
+
+          // ─── About ───────────────────────────────────
+          _SectionHeader('About'),
           ListTile(
             leading: const Icon(Icons.info_outline, color: Colors.white38),
             title: const Text('About OpenHT', style: TextStyle(color: Colors.white)),
@@ -100,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _editCallsign(BuildContext context) {
-    final controller = TextEditingController();
+    final controller = TextEditingController(text: _callsign);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -110,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           controller: controller,
           textCapitalization: TextCapitalization.characters,
           decoration: const InputDecoration(
-            hintText: 'e.g. N0CALL',
+            hintText: 'e.g. KF0JKE',
             hintStyle: TextStyle(color: Colors.white38),
           ),
           style: const TextStyle(color: Colors.white),
@@ -118,15 +203,129 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              // Save callsign to SharedPreferences
-              Navigator.pop(ctx);
+            onPressed: () async {
+              final value = controller.text.trim().toUpperCase();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('callsign', value);
+              setState(() => _callsign = value);
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Saved! ✓'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
             },
             child: const Text('Save'),
           ),
         ],
       ),
     );
+  }
+
+  void _editSameCode(BuildContext context) {
+    final controller = TextEditingController(text: _sameCode);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[850],
+        title: const Text('SAME Code', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                hintText: 'e.g. 008001 (county FIPS)',
+                hintStyle: TextStyle(color: Colors.white38),
+                counterStyle: TextStyle(color: Colors.white38),
+              ),
+              style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'SAME codes filter NOAA weather alerts to your county.\n'
+              'Find yours at weather.gov/nwr/Counties.',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final value = controller.text.trim();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('same_code', value);
+              setState(() => _sameCode = value);
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Saved! ✓'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editSpotterAppId(BuildContext context) {
+    final controller = TextEditingController(text: _spotterAppId);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[850],
+        title: const Text('Spotter Network App ID', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g. 4f2e07d475ae4',
+            hintStyle: TextStyle(color: Colors.white38),
+          ),
+          style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final value = controller.text.trim();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('spotter_app_id', value);
+              setState(() => _spotterAppId = value);
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Saved! ✓'),
+                    duration: Duration(seconds: 2),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _setIgateEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('igate_enabled', value);
+    setState(() => _igateEnabled = value);
   }
 
   void _showAbout(BuildContext context) {

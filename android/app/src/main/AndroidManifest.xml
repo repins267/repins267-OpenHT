@@ -32,6 +32,14 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED" />
+
+    <!-- Wake lock for background services -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <!-- Android Auto -->
     <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
@@ -47,6 +55,11 @@
         android:theme="@style/LaunchTheme"
         android:allowBackup="true"
         android:supportsRtl="true">
+
+        <!-- Flutter v2 embedding declaration -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
 
         <!-- ==================== MAIN ACTIVITY ==================== -->
         <activity
@@ -87,6 +100,33 @@
             android:name=".services.RadioForegroundService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice|location" />
+
+        <!-- iGate background service -->
+        <service
+            android:name=".services.IGateService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Location sharing service -->
+        <service
+            android:name=".services.LocationShareService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Track recording service -->
+        <service
+            android:name=".services.TrackRecordingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Boot receiver to restart services -->
+        <receiver
+            android:name=".receivers.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 </manifest>
