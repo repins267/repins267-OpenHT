@@ -52,6 +52,12 @@ dependencies:
   # File system paths (GPX track recording, tile caching)
   path_provider: ^2.1.0
 
+  # HMAC authentication for APRS messages (optional pre-shared key signing)
+  crypto: ^3.0.3
+
+  # Encrypted key storage using Android Keystore (for APRS auth keys)
+  flutter_secure_storage: ^9.0.0
+
   # APRS parsing (port of aprs-parser by Lee K0QED)
   # (implemented locally in lib/aprs/)
 

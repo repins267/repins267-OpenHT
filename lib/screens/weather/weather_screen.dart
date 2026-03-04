@@ -75,6 +75,10 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ] else if (!noaa.isLoading)
                     const _NoAlertsCard(),
 
+                  // ─── NOAA WX Channels ──────────────────
+                  _SectionHeader('NOAA WX Channels'),
+                  _NoaaChannelSelector(),
+
                   // ─── NWR Stations ──────────────────────
                   _SectionHeader('Nearest NWR Stations'),
                   if (noaa.isLoading && noaa.stations.isEmpty)
@@ -306,6 +310,53 @@ class _NwrStationCard extends StatelessWidget {
         content: Text('Tuned to ${station.callSign} — ${station.displayFreq}'),
         duration: const Duration(seconds: 2),
         backgroundColor: Colors.blue[800],
+      ),
+    );
+  }
+}
+
+class _NoaaChannelSelector extends StatelessWidget {
+  const _NoaaChannelSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    final radio = context.watch<RadioService>();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        children: kNoaaChannels.map((entry) {
+          final (label, freq) = entry;
+          return ActionChip(
+            label: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
+                Text(freq.toStringAsFixed(3),
+                    style: const TextStyle(color: Colors.white70, fontSize: 10)),
+              ],
+            ),
+            backgroundColor: Colors.blue[900],
+            side: const BorderSide(color: Colors.blue, width: 0.5),
+            onPressed: radio.isConnected
+                ? () {
+                    radio.tuneToFrequency(freq);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Tuned to $label — $freq MHz'),
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: Colors.blue[800],
+                      ),
+                    );
+                  }
+                : null,
+          );
+        }).toList(),
       ),
     );
   }

@@ -9,6 +9,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../services/gps_service.dart';
 import '../../aprs/aprs_service.dart';
@@ -17,6 +18,7 @@ import '../../aprs/aprs_packet.dart';
 import '../../services/spotter_service.dart';
 import '../../models/spotter_station.dart';
 import '../../services/track_service.dart';
+import '../../services/map_tile_service.dart';
 
 class AprsMapScreen extends StatefulWidget {
   const AprsMapScreen({super.key});
@@ -33,12 +35,28 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
   bool _showSpotters = true;
   bool _isRecording = false;
   bool _isCachingTiles = false;
+  MapTileSource _tileSource = MapTileSource.openStreetMap;
 
   @override
   void initState() {
     super.initState();
     // Wire APRS-IS packets into AprsService
     WidgetsBinding.instance.addPostFrameCallback((_) => _initAprsIs());
+    _loadTileSource();
+  }
+
+  Future<void> _loadTileSource() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('map_tile_source');
+    if (name != null && mounted) {
+      setState(() => _tileSource = MapTileService.fromName(name));
+    }
+  }
+
+  Future<void> _setTileSource(MapTileSource src) async {
+    setState(() => _tileSource = src);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('map_tile_source', src.name);
   }
 
   void _initAprsIs() {
@@ -112,9 +130,9 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
               }),
             ),
             children: [
-              // Base tile layer (OpenStreetMap)
+              // Base tile layer — source switchable (OSM / Topo / Satellite)
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: MapTileService.urlTemplate(_tileSource),
                 userAgentPackageName: 'com.openht.app',
                 maxZoom: 19,
               ),
@@ -263,6 +281,46 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
             const ListTile(
               title: Text('Map Layers', style: TextStyle(color: Colors.white)),
             ),
+            // ─── Tile source picker ───────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: MapTileSource.values.map((src) {
+                  final selected = _tileSource == src;
+                  return GestureDetector(
+                    onTap: () {
+                      setSheetState(() {});
+                      _setTileSource(src);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: selected ? Colors.blue[800] : Colors.grey[700],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: selected ? Colors.blue : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(MapTileService.icon(src),
+                              style: const TextStyle(fontSize: 20)),
+                          const SizedBox(height: 4),
+                          Text(MapTileService.label(src),
+                              style: TextStyle(
+                                  color: selected ? Colors.white : Colors.white70,
+                                  fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const Divider(color: Colors.white24),
             CheckboxListTile(
               title: const Text('APRS Stations', style: TextStyle(color: Colors.white70)),
               value: true,
@@ -341,7 +399,7 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
             final file = File('${tilesDir.path}/$z-$x-$y.png');
             if (!file.existsSync()) {
               try {
-                final url = 'https://tile.openstreetmap.org/$z/$x/$y.png';
+                final url = MapTileService.tileUrl(_tileSource, z, x, y);
                 final response = await http.get(Uri.parse(url), headers: {
                   'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)',
                 });

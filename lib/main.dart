@@ -26,6 +26,8 @@ import 'services/noaa_service.dart';
 import 'services/spotter_service.dart';
 import 'services/track_service.dart';
 import 'services/bbs_service.dart';
+import 'services/aprs_auth_service.dart';
+import 'services/aprs_message_service.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/near_repeater/near_repeater_screen.dart';
 import 'screens/aprs_map/aprs_map_screen.dart';
@@ -64,6 +66,16 @@ class OpenHtApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) {
           final svc = BbsService();
           svc.init();
+          return svc;
+        }),
+        ChangeNotifierProvider(create: (_) {
+          final svc = AprsAuthService();
+          svc.load();
+          return svc;
+        }),
+        ChangeNotifierProvider(create: (_) {
+          final svc = AprsMessageService();
+          svc.open();
           return svc;
         }),
       ],

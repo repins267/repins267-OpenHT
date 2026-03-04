@@ -6,6 +6,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../bluetooth/radio_service.dart';
 import 'tracks_screen.dart';
+import 'aprs_settings_screen.dart';
+import 'auth_settings_screen.dart';
+import 'channel_manager_screen.dart';
+import 'js8call_settings_screen.dart';
+import 'map_cache_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -121,6 +126,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _editSameCode(context),
           ),
 
+          // ─── Signaling ───────────────────────────────
+          _SectionHeader('Signaling'),
+          ListTile(
+            leading: const Icon(Icons.settings_input_antenna, color: Colors.green),
+            title: const Text('APRS / BSS Settings', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Callsign, SSID, path, symbol, digipeater',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AprsSettingsScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.list_alt, color: Colors.blue),
+            title: const Text('Channel & Group Manager', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Import/export CSV, sync to radio',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ChannelManagerScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.verified_user_outlined, color: Colors.green),
+            title: const Text('Message Authentication', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('HMAC pre-shared keys for APRS messages',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AuthSettingsScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.waves_outlined, color: Colors.cyan),
+            title: const Text('JS8Call Settings', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('FM digital text mode (DSP stub)',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const Js8CallSettingsScreen())),
+          ),
+
           // ─── APRS iGate ──────────────────────────────
           _SectionHeader('APRS iGate'),
           SwitchListTile(
@@ -162,6 +206,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const TracksScreen())),
+          ),
+
+          // ─── Map ─────────────────────────────────────
+          _SectionHeader('Map'),
+          ListTile(
+            leading: const Icon(Icons.map_outlined, color: Colors.teal),
+            title: const Text('Map Tile Cache', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('View cache size, clear tiles by source',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MapCacheSettingsScreen())),
           ),
 
           // ─── About ───────────────────────────────────

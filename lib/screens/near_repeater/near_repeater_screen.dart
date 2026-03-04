@@ -129,6 +129,13 @@ class NearRepeaterScreen extends StatefulWidget {
   State<NearRepeaterScreen> createState() => _NearRepeaterScreenState();
 }
 
+// Compute input (TX) frequency from output freq + offset direction + band
+double _computeInputFreq(_Repeater r) {
+  if (r.offsetDir.isEmpty) return r.outputFreq; // simplex
+  final offset = r.outputFreq >= 400 ? 5.0 : 0.6; // 70cm vs 2m standard offset
+  return r.offsetDir == '+' ? r.outputFreq + offset : r.outputFreq - offset;
+}
+
 class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
   List<_Repeater> _all = [];
   bool _isLoading = true;
@@ -136,6 +143,7 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
   String _bandFilter = 'All';
   bool _onlyOpen = true;
   int? _tuningIndex;
+  bool _isWritingGroup = false;
 
   @override
   void initState() {
@@ -203,21 +211,73 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
     }
 
     setState(() => _tuningIndex = index);
-    final ok = await radio.tuneToRepeaterGpx(
+    final inputFreq = _computeInputFreq(r);
+    final tuneOk = await radio.tuneToRepeaterGpx(
       outputFreqMhz: r.outputFreq,
       ctcssHz: r.ctcssHz,
     );
+    bool saveOk = false;
+    if (tuneOk) {
+      saveOk = await radio.writeNearRepeaterChannel(
+        outputFreqMhz: r.outputFreq,
+        inputFreqMhz: inputFreq,
+        ctcssHz: r.ctcssHz,
+        name: r.callsign,
+      );
+    }
     if (!mounted) return;
     setState(() => _tuningIndex = null);
 
     final freqStr = r.outputFreq.toStringAsFixed(3);
+    final toneStr = r.ctcssHz != null ? ' · PL ${r.ctcssHz!.toStringAsFixed(1)} Hz' : '';
+    final savedStr = saveOk ? ' · Saved to Group 6' : '';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok
-            ? 'Tuned to ${r.callsign} — $freqStr MHz'
+        content: Text(tuneOk
+            ? 'Tuned to $freqStr MHz$toneStr$savedStr'
             : 'Tune failed: ${radio.errorMessage}'),
-        backgroundColor: ok ? Colors.green[700] : Colors.red[700],
+        backgroundColor: tuneOk ? Colors.green[700] : Colors.red[700],
         duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _writeGroupToRadio() async {
+    final radio = context.read<RadioService>();
+    if (!radio.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Radio not connected')),
+      );
+      return;
+    }
+
+    setState(() => _isWritingGroup = true);
+    final list = _filtered;
+    int written = 0;
+    final toWrite = list.take(32).toList();
+    for (int i = 0; i < toWrite.length; i++) {
+      final r = toWrite[i];
+      final ok = await radio.writeNearRepeaterChannel(
+        outputFreqMhz: r.outputFreq,
+        inputFreqMhz: _computeInputFreq(r),
+        ctcssHz: r.ctcssHz,
+        name: r.callsign,
+      );
+      if (ok) written++;
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    if (!mounted) return;
+    setState(() => _isWritingGroup = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Wrote $written/${toWrite.length} repeaters to Group 6'),
+        backgroundColor: written == toWrite.length
+            ? Colors.green[700]
+            : written > 0
+                ? Colors.orange[700]
+                : Colors.red[700],
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -234,6 +294,21 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
+          if (_isWritingGroup)
+            const Padding(
+              padding: EdgeInsets.all(14),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save_alt),
+              tooltip: 'Write top 32 to Group 6',
+              onPressed: _isLoading ? null : _writeGroupToRadio,
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Reload',

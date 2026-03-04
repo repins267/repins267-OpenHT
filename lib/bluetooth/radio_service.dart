@@ -16,11 +16,25 @@ enum RadioConnectionState {
   error,
 }
 
+// NOAA Weather Radio standard frequencies (all 7 nationwide channels)
+const List<(String, double)> kNoaaChannels = [
+  ('WX1', 162.400),
+  ('WX2', 162.425),
+  ('WX3', 162.450),
+  ('WX4', 162.475),
+  ('WX5', 162.500),
+  ('WX6', 162.525),
+  ('WX7', 162.550),
+];
+
 class RadioService extends ChangeNotifier {
   RadioController? _controller;
   RadioConnectionState _connectionState = RadioConnectionState.disconnected;
   String? _errorMessage;
   List<BluetoothDevice> _pairedDevices = [];
+
+  /// Next available slot in Group 5 (near repeaters), wraps at 32.
+  int _nearRepeaterSlot = 0;
 
   // RFCOMM UUIDs in connection priority order
   // Primary:   00001101-0000-1000-8000-00805F9B34FB (Standard SPP)
@@ -78,14 +92,20 @@ class RadioService extends ChangeNotifier {
     return true;
   }
 
-  /// Ensure the radio is in VFO mode before writing frequency.
-  /// Per the Benshi protocol, vfoX=1 (VFO A) must be set before setVfoFrequency()
-  /// or the radio stays in channel/memory mode and ignores frequency writes.
+  /// Switch the radio to VFO mode (vfoX=1) so VFO frequency writes take effect.
+  /// Non-throwing — if writeSettings fails (e.g. radio firmware rejects it),
+  /// we log and continue; the channel write may still partially succeed.
   Future<void> _ensureVfoMode() async {
     final s = _controller?.settings;
     if (s == null || s.vfoX == 1) return;
-    await _controller!.writeSettings(s.copyWith(vfoX: 1));
-    await Future.delayed(const Duration(milliseconds: 150));
+    try {
+      await _controller!.writeSettings(s.copyWith(vfoX: 1));
+      await Future.delayed(const Duration(milliseconds: 150));
+      debugPrint('OpenHT: switched to VFO mode');
+    } catch (e) {
+      debugPrint('OpenHT: _ensureVfoMode failed (non-fatal) — $e');
+      // Continue anyway; the frequency write may still update VFO parameters.
+    }
   }
 
   /// Scan for paired Bluetooth devices — user selects the radio.
@@ -154,6 +174,11 @@ class RadioService extends ChangeNotifier {
       _connectionState = RadioConnectionState.connected;
       _controller?.addListener(_onRadioStateChanged);
       notifyListeners();
+
+      // Auto-populate NOAA weather channels into Group 4
+      writeNoaaGroup().then((n) =>
+          debugPrint('OpenHT: Wrote $n NOAA channels to Group 4'));
+
       return true;
     } catch (e) {
       _errorMessage = 'Connection failed: $e';
@@ -187,7 +212,6 @@ class RadioService extends ChangeNotifier {
   Future<bool> stepFrequency(double stepMhz) async {
     if (_controller == null || !isConnected) return false;
     try {
-      await _ensureVfoMode();
       final newFreq = _controller!.currentRxFreq + stepMhz;
       await _controller!.setVfoFrequency(newFreq);
       return true;
@@ -202,7 +226,6 @@ class RadioService extends ChangeNotifier {
   Future<bool> setVfoMode(ModulationType mod, BandwidthType bw) async {
     if (_controller == null || !isConnected) return false;
     try {
-      await _ensureVfoMode();
       final vfo = await _controller!.getChannel(0);
       await _controller!.writeChannel(
         vfo.copyWith(rxMod: mod, txMod: mod, bandwidth: bw),
@@ -265,14 +288,16 @@ class RadioService extends ChangeNotifier {
     try {
       await _ensureVfoMode();
       final vfo = await _controller!.getChannel(0);
+      // Use 0.0 (encodes as 0 = no tone) when ctcssHz is null, because
+      // copyWith(txSubAudio: null) preserves the existing value (dynamic ?? bug).
       final updated = vfo.copyWith(
         rxFreq: outputFreqMhz,
         txFreq: outputFreqMhz,
         rxMod: ModulationType.FM,
         txMod: ModulationType.FM,
         bandwidth: BandwidthType.NARROW,
-        txSubAudio: ctcssHz,
-        rxSubAudio: ctcssHz,
+        txSubAudio: ctcssHz ?? 0.0,
+        rxSubAudio: ctcssHz ?? 0.0,
       );
       await _controller!.writeChannel(updated);
       debugPrint('OpenHT: Tuned to ${outputFreqMhz.toStringAsFixed(4)} MHz'
@@ -356,11 +381,98 @@ class RadioService extends ChangeNotifier {
     return written;
   }
 
+  /// Write all 7 standard NOAA weather channels to Group 4 (index 4).
+  /// Returns count of successfully written channels.
+  Future<int> writeNoaaGroup() async {
+    if (_controller == null || !isConnected) return 0;
+    int written = 0;
+    for (int i = 0; i < kNoaaChannels.length; i++) {
+      final (label, freq) = kNoaaChannels[i];
+      // Name: "WX1 162." style — 8 chars, spaces allowed by radio
+      final name = '${label} ${freq.toStringAsFixed(3)}';
+      final safeName = name.length > 8 ? name.substring(0, 8) : name;
+      try {
+        final ch = Channel(
+          channelId: 4 * 32 + i,
+          txMod: ModulationType.FM,
+          txFreq: freq,
+          rxMod: ModulationType.FM,
+          rxFreq: freq,
+          scan: true,
+          txAtMaxPower: false,
+          txAtMedPower: false,
+          bandwidth: BandwidthType.NARROW,
+          name: safeName,
+          txDisable: true, // receive-only
+        );
+        await _controller!.writeChannel(ch);
+        written++;
+        await Future.delayed(const Duration(milliseconds: 80));
+      } catch (e) {
+        debugPrint('OpenHT: writeNoaaGroup ch$i failed — $e');
+      }
+    }
+    debugPrint('OpenHT: Wrote $written/7 NOAA channels to Group 4');
+    return written;
+  }
+
+  /// Write a single repeater to the next available slot in Group 5.
+  /// Slot pointer wraps at 32 (fills group cyclically).
+  Future<bool> writeNearRepeaterChannel({
+    required double outputFreqMhz,
+    required double inputFreqMhz,
+    required double? ctcssHz,
+    required String name,
+  }) async {
+    if (_controller == null || !isConnected) return false;
+    final slot = _nearRepeaterSlot % 32;
+    _nearRepeaterSlot = slot + 1;
+    try {
+      final ch = Channel(
+        channelId: 5 * 32 + slot,
+        rxMod: ModulationType.FM,
+        rxFreq: outputFreqMhz,
+        txMod: ModulationType.FM,
+        txFreq: inputFreqMhz,
+        rxSubAudio: ctcssHz,
+        txSubAudio: ctcssHz,
+        scan: true,
+        txAtMaxPower: false,
+        txAtMedPower: false,
+        bandwidth: BandwidthType.NARROW,
+        name: _nearRepeaterName(name, outputFreqMhz),
+      );
+      await _controller!.writeChannel(ch);
+      debugPrint('OpenHT: Wrote near repeater slot $slot — ${outputFreqMhz.toStringAsFixed(4)} MHz');
+      return true;
+    } catch (e) {
+      debugPrint('OpenHT: writeNearRepeaterChannel failed — $e');
+      return false;
+    }
+  }
+
+  /// Generate an 8-char channel name from callsign + output frequency.
+  /// Format: first 6 chars of callsign + last 2 digits of integer MHz part.
+  /// Example: W0ABC on 146.940 → "W0ABC46"
+  static String _nearRepeaterName(String callsign, double freqMhz) {
+    final cs = callsign
+        .replaceAll(RegExp(r'[^A-Z0-9]', caseSensitive: false), '')
+        .toUpperCase();
+    final freqInt = freqMhz.truncate().toString();
+    final suffix = freqInt.length >= 2
+        ? freqInt.substring(freqInt.length - 2)
+        : freqInt;
+    final prefix = cs.length > 6 ? cs.substring(0, 6) : cs;
+    final full = prefix + suffix;
+    return full.length > 8 ? full.substring(0, 8) : full;
+  }
+
   void disconnect() {
     _controller?.removeListener(_onRadioStateChanged);
     _controller?.dispose();
     _controller = null;
     _connectionState = RadioConnectionState.disconnected;
+    _nearRepeaterSlot = 0;
     notifyListeners();
   }
 
