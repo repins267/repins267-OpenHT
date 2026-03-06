@@ -20,8 +20,8 @@ class StationDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final gps = context.watch<GpsService>();
     final radio = context.watch<RadioService>();
-    final myLat = gps.currentPosition?.latitude;
-    final myLon = gps.currentPosition?.longitude;
+    final myLat = gps.latitude;
+    final myLon = gps.longitude;
 
     double? distKm;
     double? bearing;

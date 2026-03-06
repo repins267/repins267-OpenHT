@@ -48,10 +48,11 @@ class NoaaService extends ChangeNotifier {
       debugPrint('NoaaService: GET $_nwrStnUrl');
       final response = await http
           .get(Uri.parse(_nwrStnUrl), headers: _headers)
-          .timeout(const Duration(seconds: 20));
+          .timeout(const Duration(seconds: 12));
 
       if (response.statusCode != 200) {
         debugPrint('NoaaService: NWR stations HTTP ${response.statusCode}');
+        if (_stations.isEmpty) _error = 'NWR station list unavailable (HTTP ${response.statusCode})';
         return;
       }
 
@@ -96,7 +97,10 @@ class NoaaService extends ChangeNotifier {
       debugPrint('NoaaService: Loaded ${_stations.length} NWR stations');
     } catch (e) {
       debugPrint('NoaaService: Station fetch error — $e');
-      _error = 'Failed to load NWR stations: $e';
+      // Only show error if we have no cached data; otherwise keep showing existing stations silently.
+      if (_stations.isEmpty) {
+        _error = 'NWR stations unavailable — check internet connection';
+      }
     }
   }
 

@@ -1,6 +1,7 @@
 // lib/aprs/aprs_packet.dart
 // APRS packet data model
-// Ported from aprs-parser by Lee K0QED (https://github.com/k0qed/aprs-parser)
+
+enum AprsSource { rf, aprsIs }
 
 class AprsPacket {
   final String callsign;
@@ -16,6 +17,8 @@ class AprsPacket {
   final String? symbolTable;
   final AprsPacketType type;
   final DateTime receivedAt;
+  final AprsSource source;
+  final String? digiPath; // e.g. "WIDE1-1,KD0XYZ*" (RF only)
 
   const AprsPacket({
     required this.callsign,
@@ -31,7 +34,18 @@ class AprsPacket {
     this.symbolTable,
     required this.type,
     required this.receivedAt,
+    this.source = AprsSource.aprsIs,
+    this.digiPath,
   });
+
+  /// Number of digipeater hops (RF only; 0 = heard direct).
+  int get rfHops {
+    if (source != AprsSource.rf || digiPath == null) return 0;
+    return digiPath!.split(',').where((p) => p.endsWith('*')).length;
+  }
+
+  /// True if heard direct (RF, 0 hops).
+  bool get isDirect => source == AprsSource.rf && rfHops == 0;
 
   bool get hasPosition => latitude != null && longitude != null;
 
@@ -45,9 +59,10 @@ class AprsPacket {
     return '${diff.inHours}h ago';
   }
 
-  /// Parse a raw APRS packet string
-  /// Basic implementation - covers position reports and messages
-  static AprsPacket? tryParse(String raw) {
+  /// Parse a raw APRS packet string.
+  /// [source] — tag as RF or APRS-IS at the call site.
+  static AprsPacket? tryParse(String raw,
+      {AprsSource source = AprsSource.aprsIs}) {
     try {
       // Format: CALLSIGN-SSID>TOCALL,PATH:payload
       final colonIdx = raw.indexOf(':');
@@ -65,11 +80,21 @@ class AprsPacket {
       final callsign = dashIdx >= 0 ? fromField.substring(0, dashIdx) : fromField;
       final ssid = dashIdx >= 0 ? fromField.substring(dashIdx + 1) : null;
 
+      // Extract digi path (everything after first comma in header path, skip q-codes)
+      String? digiPath;
+      final pathField = header.substring(gtIdx + 1);
+      final pathParts = pathField.split(',');
+      if (pathParts.length > 1) {
+        final digiParts = pathParts.skip(1)
+            .where((p) => !p.startsWith('q') && p != 'TCPIP*' && p != 'TCPXX*')
+            .toList();
+        if (digiParts.isNotEmpty) digiPath = digiParts.join(',');
+      }
+
       final type = _detectType(payload);
       double? lat, lon;
       String? symbol, symbolTable, comment;
 
-      // Try to parse position from payload
       if (payload.length > 1) {
         final posResult = _tryParsePosition(payload);
         if (posResult != null) {
@@ -92,6 +117,8 @@ class AprsPacket {
         symbolTable: symbolTable,
         type: type,
         receivedAt: DateTime.now(),
+        source: source,
+        digiPath: digiPath,
       );
     } catch (_) {
       return null;
@@ -111,37 +138,74 @@ class AprsPacket {
     }
   }
 
-  /// Parse compressed or uncompressed APRS position
+  /// Parse compressed or uncompressed APRS position.
+  /// Handles: uncompressed (with or without timestamp), compressed base91.
   static Map<String, dynamic>? _tryParsePosition(String payload) {
-    // Uncompressed: !DDMM.mmN/DDDMM.mmW[symbol][comment]
-    final uncompressedRe = RegExp(
-      r'[!=/@](\d{4}\.\d{2})([NS])(.)(\d{5}\.\d{2})([EW])(.)(.*)',
-    );
-    final match = uncompressedRe.firstMatch(payload);
-    if (match != null) {
-      final latDeg = double.parse(match.group(1)!.substring(0, 2));
-      final latMin = double.parse(match.group(1)!.substring(2));
-      final latDir = match.group(2)!;
-      final lonDeg = double.parse(match.group(4)!.substring(0, 3));
-      final lonMin = double.parse(match.group(4)!.substring(3));
-      final lonDir = match.group(5)!;
-      final symTable = match.group(3)!;
-      final sym = match.group(6)!;
-      final cmt = match.group(7);
+    if (payload.isEmpty) return null;
+
+    // For / and @ packets strip the 7-char timestamp (DDHHMMz / HHMMSSh / etc.)
+    // so the position block starts right after.
+    String pos = payload;
+    if ((payload[0] == '/' || payload[0] == '@') && payload.length >= 8) {
+      pos = payload[0] + payload.substring(8);
+    }
+
+    // ── Uncompressed: [!=/@]DDMM.mmN/DDDMM.mmW[sym][comment] ────────────────
+    final ucRe = RegExp(r'[!=/@](\d{4}\.\d{2})([NS])(.)(\d{5}\.\d{2})([EW])(.*)');
+    final ucm = ucRe.firstMatch(pos);
+    if (ucm != null) {
+      final latDeg = double.parse(ucm.group(1)!.substring(0, 2));
+      final latMin = double.parse(ucm.group(1)!.substring(2));
+      final latDir = ucm.group(2)!;
+      final lonDeg = double.parse(ucm.group(4)!.substring(0, 3));
+      final lonMin = double.parse(ucm.group(4)!.substring(3));
+      final lonDir = ucm.group(5)!;
+      final rest   = ucm.group(6) ?? '';
+      final sym      = rest.isNotEmpty ? rest[0] : '';
+      final symTable = ucm.group(3)!;
+      final cmt      = rest.length > 1 ? rest.substring(1) : null;
 
       double lat = latDeg + latMin / 60.0;
       double lon = lonDeg + lonMin / 60.0;
       if (latDir == 'S') lat = -lat;
       if (lonDir == 'W') lon = -lon;
 
-      return {
-        'lat': lat,
-        'lon': lon,
-        'symbol': sym,
-        'symbolTable': symTable,
-        'comment': cmt?.isNotEmpty == true ? cmt : null,
-      };
+      return {'lat': lat, 'lon': lon, 'symbol': sym, 'symbolTable': symTable,
+              'comment': cmt?.isNotEmpty == true ? cmt : null};
     }
+
+    // ── Compressed base91: [!/=@]<symTable><lat4><lon4><symbol>[cs][T][cmt] ─
+    // Minimum: 1 type + 1 symTable + 4 lat + 4 lon + 1 symbol = 11 chars
+    if (pos.length >= 11) {
+      final symTable = pos[1];
+      final latS = pos.substring(2, 6);
+      final lonS = pos.substring(6, 10);
+      final sym  = pos[10];
+
+      // Base91 chars must be in range 33–124 and NOT all decimal digits
+      bool isBase91(String s) =>
+          s.codeUnits.every((c) => c >= 33 && c <= 124) &&
+          !RegExp(r'^\d+$').hasMatch(s);
+
+      if (isBase91(latS) && isBase91(lonS)) {
+        int b91(String s) =>
+            (s.codeUnitAt(0) - 33) * 753571 +
+            (s.codeUnitAt(1) - 33) * 8281 +
+            (s.codeUnitAt(2) - 33) * 91 +
+            (s.codeUnitAt(3) - 33);
+
+        final lat = 90.0  - b91(latS) / 380926.0;
+        final lon = -180.0 + b91(lonS) / 190463.0;
+
+        // Sanity-check decoded coordinates
+        if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+          final cmt = pos.length > 13 ? pos.substring(13) : null;
+          return {'lat': lat, 'lon': lon, 'symbol': sym, 'symbolTable': symTable,
+                  'comment': cmt?.isNotEmpty == true ? cmt : null};
+        }
+      }
+    }
+
     return null;
   }
 }

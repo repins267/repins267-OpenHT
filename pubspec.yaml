@@ -52,6 +52,9 @@ dependencies:
   # File system paths (GPX track recording, tile caching)
   path_provider: ^2.1.0
 
+  # File picker for importing Repeaterbook GPX exports
+  file_picker: ^8.0.0
+
   # HMAC authentication for APRS messages (optional pre-shared key signing)
   crypto: ^3.0.3
 
@@ -72,3 +75,4 @@ flutter:
   assets:
     - assets/
     - assets/repeaters/
+    - assets/manuals/

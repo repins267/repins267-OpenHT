@@ -6,7 +6,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/aprs_map_settings.dart';
 
 // ─── APRS passcode algorithm (standard hash, KC0AXJ) ─────────────────────────
 int computeAprsPasscode(String callsign) {
@@ -71,8 +73,12 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
   int    _passcode = -1; // -1 = receive-only
 
   // APRS-IS
+  bool   _aprsIsEnabled = true;
   String _server   = 'rotate.aprs2.net';
-  int    _filterKm = 50;
+  int    _filterKm = 200;
+
+  // Radio RF / TNC
+  bool   _rfEnabled = false;
 
   // Path
   String _path = 'WIDE1-1';
@@ -84,7 +90,7 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
   // Digital Mode (mirrors on-radio Digital Mode menu)
   bool   _digitalModeEnabled  = false;
   String _shareLocInterval    = '0'; // seconds
-  int    _digitalChannel      = 0;
+  int    _digitalChannel      = 1;
   bool   _bssMode             = false; // false=APRS, true=BSS
 
   // Beacon
@@ -96,6 +102,12 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
   bool _digiEnabled = false;
   int  _digiTtl     = 3; // 0-8
   int  _digiMaxHops = 3; // 0-8
+
+  // Map Display
+  bool   _mapShowIs     = true;
+  bool   _mapShowRf     = true;
+  bool   _mapDirectOnly = false;
+  String _mapMaxAge     = 'all'; // all, 1hr, 6hr, 24hr
 
   bool _isDirty = false;
   bool _testing = false;
@@ -112,14 +124,20 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
       _callsign           = prefs.getString('callsign')                  ?? '';
       _ssid               = prefs.getInt('aprs_ssid')                    ?? 7;
       _passcode           = prefs.getInt('aprs_passcode')                ?? -1;
+      _aprsIsEnabled      = prefs.getBool('aprs_is_enabled')             ?? true;
       _server             = prefs.getString('aprs_server')               ?? 'rotate.aprs2.net';
-      _filterKm           = prefs.getInt('aprs_filter_km')               ?? 50;
+      _filterKm           = prefs.getInt('aprs_filter_km')               ?? 200;
+      _rfEnabled          = prefs.getBool('aprs_rf_enabled')             ?? false;
+      _mapShowIs          = prefs.getBool('aprs_map_show_is')            ?? true;
+      _mapShowRf          = prefs.getBool('aprs_map_show_rf')            ?? true;
+      _mapDirectOnly      = prefs.getBool('aprs_map_direct_only')        ?? false;
+      _mapMaxAge          = prefs.getString('aprs_map_max_age')          ?? 'all';
       _path               = prefs.getString('aprs_path')                 ?? 'WIDE1-1';
       _symbolTable        = prefs.getString('aprs_symbol_table')         ?? '/';
       _symbolChar         = prefs.getString('aprs_symbol_char')          ?? '>';
       _digitalModeEnabled = prefs.getBool('aprs_digital_mode')           ?? false;
       _shareLocInterval   = prefs.getString('aprs_share_loc_interval')   ?? '0';
-      _digitalChannel     = prefs.getInt('aprs_digital_channel')         ?? 0;
+      _digitalChannel     = prefs.getInt('aprs_digital_channel')         ?? 1;
       _bssMode            = prefs.getBool('aprs_bss_mode')               ?? false;
       _beaconComment      = prefs.getString('aprs_beacon_comment')       ?? '';
       _smartBeaconing     = prefs.getBool('aprs_smart_beaconing')        ?? false;
@@ -141,14 +159,20 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
     await prefs.setString('callsign',                  _callsign);
     await prefs.setInt   ('aprs_ssid',                 _ssid);
     await prefs.setInt   ('aprs_passcode',             _passcode);
+    await prefs.setBool  ('aprs_is_enabled',           _aprsIsEnabled);
     await prefs.setString('aprs_server',               _server);
     await prefs.setInt   ('aprs_filter_km',            _filterKm);
+    await prefs.setBool  ('aprs_rf_enabled',           _rfEnabled);
+    await prefs.setBool  ('aprs_map_show_is',          _mapShowIs);
+    await prefs.setBool  ('aprs_map_show_rf',          _mapShowRf);
+    await prefs.setBool  ('aprs_map_direct_only',      _mapDirectOnly);
+    await prefs.setString('aprs_map_max_age',          _mapMaxAge);
     await prefs.setString('aprs_path',                 _path);
     await prefs.setString('aprs_symbol_table',         _symbolTable);
     await prefs.setString('aprs_symbol_char',          _symbolChar);
     await prefs.setBool  ('aprs_digital_mode',         _digitalModeEnabled);
     await prefs.setString('aprs_share_loc_interval',   _shareLocInterval);
-    await prefs.setInt   ('aprs_digital_channel',      _digitalChannel);
+    await prefs.setInt   ('aprs_digital_channel',      _digitalChannel); // 1-based; subtract 1 when writing to radio (0-based protocol)
     await prefs.setBool  ('aprs_bss_mode',             _bssMode);
     await prefs.setString('aprs_beacon_comment',       _beaconComment);
     await prefs.setBool  ('aprs_smart_beaconing',      _smartBeaconing);
@@ -157,6 +181,8 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
     await prefs.setInt   ('aprs_digi_ttl',             _digiTtl);
     await prefs.setInt   ('aprs_digi_max_hops',        _digiMaxHops);
     if (mounted) {
+      // Notify map screen immediately so filters/connection update without restart
+      context.read<AprsMapSettings>().load();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('APRS settings saved'),
@@ -306,7 +332,25 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
           ),
 
           // ─── APRS-IS Connection ───────────────────────
-          _SectionHeader('APRS-IS Connection'),
+          _SectionHeader('APRS-IS (Internet)'),
+          SwitchListTile(
+            secondary: Icon(Icons.cloud_outlined,
+                color: _aprsIsEnabled ? Colors.blue : Colors.grey),
+            title: const Text('Enable APRS-IS',
+                style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              _aprsIsEnabled
+                  ? 'Receive stations via internet (${_server})'
+                  : 'Internet APRS disabled',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            value: _aprsIsEnabled,
+            onChanged: (v) {
+              setState(() => _aprsIsEnabled = v);
+              _markDirty();
+            },
+          ),
+          if (_aprsIsEnabled) ...[
           ListTile(
             leading: const Icon(Icons.dns_outlined, color: Colors.blue),
             title: const Text('Server', style: TextStyle(color: Colors.white)),
@@ -356,6 +400,90 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
                   _markDirty();
                 },
               ),
+            ),
+          ),
+
+          ], // end if (_aprsIsEnabled)
+
+          // ─── Radio RF / TNC ───────────────────────────
+          _SectionHeader('Radio RF (TNC)'),
+          SwitchListTile(
+            secondary: Icon(Icons.radio,
+                color: _rfEnabled ? Colors.green : Colors.grey),
+            title: const Text('Enable Radio APRS',
+                style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              _rfEnabled
+                  ? 'Decode APRS packets from radio TNC'
+                  : 'Radio RF APRS disabled',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            value: _rfEnabled,
+            onChanged: (v) {
+              setState(() => _rfEnabled = v);
+              _markDirty();
+            },
+          ),
+
+          // ─── Map Display ──────────────────────────────
+          _SectionHeader('Map Display'),
+          SwitchListTile(
+            secondary: Icon(Icons.cloud_outlined,
+                color: _mapShowIs ? Colors.blue : Colors.grey),
+            title: const Text('Show APRS-IS Stations',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Internet-sourced stations on map',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            value: _mapShowIs,
+            onChanged: (v) {
+              setState(() => _mapShowIs = v);
+              _markDirty();
+            },
+          ),
+          SwitchListTile(
+            secondary: Icon(Icons.radio,
+                color: _mapShowRf ? Colors.green : Colors.grey),
+            title: const Text('Show RF Stations',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Radio-heard stations on map',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            value: _mapShowRf,
+            onChanged: (v) {
+              setState(() => _mapShowRf = v);
+              _markDirty();
+            },
+          ),
+          SwitchListTile(
+            secondary: Icon(Icons.signal_cellular_alt,
+                color: _mapDirectOnly ? Colors.orange : Colors.grey),
+            title: const Text('Direct Only',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Only show stations heard without digipeaters',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            value: _mapDirectOnly,
+            onChanged: (v) {
+              setState(() => _mapDirectOnly = v);
+              _markDirty();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.access_time, color: Colors.orange),
+            title: const Text('Max Age', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Hide stations older than',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: DropdownButton<String>(
+              value: _mapMaxAge,
+              dropdownColor: Colors.grey[850],
+              items: const [
+                DropdownMenuItem(value: 'all',  child: Text('All',  style: TextStyle(color: Colors.white))),
+                DropdownMenuItem(value: '1hr',  child: Text('1 hr', style: TextStyle(color: Colors.white))),
+                DropdownMenuItem(value: '6hr',  child: Text('6 hr', style: TextStyle(color: Colors.white))),
+                DropdownMenuItem(value: '24hr', child: Text('24 hr',style: TextStyle(color: Colors.white))),
+              ],
+              onChanged: (v) {
+                setState(() => _mapMaxAge = v ?? 'all');
+                _markDirty();
+              },
             ),
           ),
 
@@ -537,16 +665,16 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
               trailing: SizedBox(
                 width: 80,
                 child: DropdownButton<int>(
-                  value: _digitalChannel.clamp(0, 127),
+                  value: _digitalChannel.clamp(1, 128),
                   dropdownColor: Colors.grey[850],
                   isExpanded: true,
                   items: List.generate(128, (i) => DropdownMenuItem(
-                    value: i,
+                    value: i + 1,
                     child: Text('Ch ${i + 1}',
                         style: const TextStyle(color: Colors.white, fontSize: 12)),
                   )),
                   onChanged: (v) {
-                    setState(() => _digitalChannel = v ?? 0);
+                    setState(() => _digitalChannel = v ?? 1);
                     _markDirty();
                   },
                 ),

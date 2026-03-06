@@ -1,20 +1,18 @@
 // lib/aprs/aprs_is_service.dart
-// APRS-IS TCP connection — connects to noam.aprs2.net:14580 and
+// APRS-IS TCP connection — connects to a filtered APRS-IS server and
 // subscribes to a position-filtered packet stream, feeding AprsService.
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum AprsIsState { disconnected, connecting, connected, error }
 
 class AprsIsService extends ChangeNotifier {
-  static const String _host    = 'noam.aprs2.net';
-  static const int    _port    = 14580;
-  static const String _callsign = 'KF0JKE-7';
-  static const String _passcode = '17323';
-  static const String _appName  = 'OpenHT';
+  static const int    _port       = 14580;
+  static const String _appName    = 'OpenHT';
   static const String _appVersion = '0.1.0';
 
   Socket? _socket;
@@ -41,15 +39,40 @@ class AprsIsService extends ChangeNotifier {
   }
 
   /// Connect to APRS-IS and start receiving packets.
-  /// [filter] — optional server-side filter, e.g. 'r/39.8/-98.6/400'
-  Future<void> connect({String? filter}) async {
+  /// Reads callsign/passcode/server/filter from SharedPreferences.
+  /// [lat]/[lon] — current position for building the range filter.
+  Future<void> connect({double? lat, double? lon}) async {
     if (_state == AprsIsState.connected || _state == AprsIsState.connecting) return;
 
     _setState(AprsIsState.connecting);
     _reconnectTimer?.cancel();
 
+    final prefs    = await SharedPreferences.getInstance();
+    final callsign = prefs.getString('callsign') ?? '';
+    final ssid     = prefs.getInt('aprs_ssid') ?? 7;
+    final passcode = prefs.getInt('aprs_passcode') ?? -1;
+    final server   = prefs.getString('aprs_server') ?? 'rotate.aprs2.net';
+    final filterKm = prefs.getInt('aprs_filter_km') ?? 200;
+
+    if (callsign.isEmpty) {
+      debugPrint('AprsIS: No callsign configured — set it in APRS Settings');
+      _errorMessage = 'No callsign — configure in Settings → APRS';
+      _setState(AprsIsState.error);
+      return;
+    }
+
+    final sourceAddr = '$callsign-$ssid';
+    final passStr    = passcode == -1 ? '-1' : '$passcode';
+
+    // Build position filter; fall back to center of USA if no GPS
+    final filterLat = lat ?? 39.83;
+    final filterLon = lon ?? -98.58;
+    _lastLat = filterLat;
+    _lastLon = filterLon;
+    final filter    = 'r/${filterLat.toStringAsFixed(2)}/${filterLon.toStringAsFixed(2)}/$filterKm';
+
     try {
-      _socket = await Socket.connect(_host, _port)
+      _socket = await Socket.connect(server, _port)
           .timeout(const Duration(seconds: 10));
 
       _socket!.encoding = utf8;
@@ -60,9 +83,8 @@ class AprsIsService extends ChangeNotifier {
         debugPrint('AprsIS: Socket done error (handled) — $e');
       });
 
-      final loginLine = 'user $_callsign pass $_passcode '
-          'vers $_appName $_appVersion'
-          '${filter != null ? ' filter $filter' : ''}\r\n';
+      final loginLine = 'user $sourceAddr pass $passStr '
+          'vers $_appName $_appVersion filter $filter\r\n';
       _socket!.write(loginLine);
       debugPrint('AprsIS: → $loginLine');
 
@@ -118,12 +140,15 @@ class AprsIsService extends ChangeNotifier {
     _setState(AprsIsState.disconnected);
   }
 
+  double? _lastLat;
+  double? _lastLon;
+
   void _scheduleReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(const Duration(seconds: 30), () {
       if (_state != AprsIsState.connected) {
         debugPrint('AprsIS: Reconnecting…');
-        connect();
+        connect(lat: _lastLat, lon: _lastLon);
       }
     });
   }

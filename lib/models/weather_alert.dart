@@ -10,6 +10,7 @@ class WeatherAlert {
   final String? description;
   final String? expires;
   final String? areaDesc;
+  final List<String> sameCodes; // FIPS/SAME codes from geocode.SAME
 
   const WeatherAlert({
     required this.event,
@@ -18,10 +19,13 @@ class WeatherAlert {
     this.description,
     this.expires,
     this.areaDesc,
+    this.sameCodes = const [],
   });
 
   factory WeatherAlert.fromJson(Map<String, dynamic> json) {
     final props = json['properties'] as Map<String, dynamic>? ?? {};
+    final geocode = props['geocode'] as Map<String, dynamic>? ?? {};
+    final same = (geocode['SAME'] as List<dynamic>? ?? []).cast<String>();
     return WeatherAlert(
       event:       props['event']    as String? ?? 'Weather Alert',
       severity:    props['severity'] as String? ?? 'Unknown',
@@ -29,6 +33,7 @@ class WeatherAlert {
       description: props['description'] as String?,
       expires:     props['expires']  as String?,
       areaDesc:    props['areaDesc'] as String?,
+      sameCodes:   same,
     );
   }
 

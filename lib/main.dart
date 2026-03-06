@@ -28,6 +28,10 @@ import 'services/track_service.dart';
 import 'services/bbs_service.dart';
 import 'services/aprs_auth_service.dart';
 import 'services/aprs_message_service.dart';
+import 'services/weather_alert_controller.dart';
+import 'services/repeaterbook_service.dart';
+import 'services/aprs_map_settings.dart';
+import 'services/repeaterbook_connect_service.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/near_repeater/near_repeater_screen.dart';
 import 'screens/aprs_map/aprs_map_screen.dart';
@@ -35,8 +39,9 @@ import 'screens/weather/weather_screen.dart';
 import 'screens/messages/messages_screen.dart';
 import 'screens/settings/settings_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await RepeaterBookConnectService.loadCache();
   runApp(const OpenHtApp());
 }
 
@@ -78,6 +83,21 @@ class OpenHtApp extends StatelessWidget {
           svc.open();
           return svc;
         }),
+        ChangeNotifierProvider(create: (_) {
+          final svc = RepeaterBookService();
+          svc.loadCache();
+          return svc;
+        }),
+        ChangeNotifierProvider(create: (_) => AprsMapSettings()),
+        ChangeNotifierProxyProvider3<NoaaService, RadioService, GpsService,
+            WeatherAlertController>(
+          create: (_) => WeatherAlertController(),
+          update: (_, noaa, radio, gps, prev) {
+            final ctrl = prev ?? WeatherAlertController();
+            ctrl.update(noaa: noaa, radio: radio, gps: gps);
+            return ctrl;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'OpenHT',
@@ -191,7 +211,7 @@ class _OpenHtShellState extends State<OpenHtShell> {
           const NavigationDestination(
             icon: Icon(Icons.map_outlined),
             selectedIcon: Icon(Icons.map),
-            label: 'APRS Map',
+            label: 'Map',
           ),
           const NavigationDestination(
             icon: Icon(Icons.thunderstorm_outlined),

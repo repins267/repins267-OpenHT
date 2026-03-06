@@ -1,0 +1,56 @@
+[
+  {
+    "callsign": "WXM56",
+    "site": "Colorado Springs",
+    "state": "CO",
+    "frequency": 162.475,
+    "lat": 38.742,
+    "lon": -104.839,
+    "same_codes": ["008041", "008119", "008099"]
+  },
+  {
+    "callsign": "WXM52",
+    "site": "Pueblo",
+    "state": "CO",
+    "frequency": 162.400,
+    "lat": 38.318,
+    "lon": -104.654,
+    "same_codes": ["008101", "008027", "008089"]
+  },
+  {
+    "callsign": "KEC76",
+    "site": "Denver",
+    "state": "CO",
+    "frequency": 162.550,
+    "lat": 39.739,
+    "lon": -105.239,
+    "same_codes": ["008031", "008001", "008059"]
+  },
+  {
+    "callsign": "KJY81",
+    "site": "Canon City",
+    "state": "CO",
+    "frequency": 162.500,
+    "lat": 38.442,
+    "lon": -105.242,
+    "same_codes": ["008043", "008027"]
+  },
+  {
+    "callsign": "KEC59",
+    "site": "Wichita",
+    "state": "KS",
+    "frequency": 162.550,
+    "lat": 37.766,
+    "lon": -97.234,
+    "same_codes": ["020173", "020015", "020191"]
+  },
+  {
+    "callsign": "WXK92",
+    "site": "Ellsworth",
+    "state": "KS",
+    "frequency": 162.400,
+    "lat": 38.740,
+    "lon": -98.225,
+    "same_codes": ["020053", "020169", "020105"]
+  }
+]

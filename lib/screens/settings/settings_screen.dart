@@ -11,6 +11,7 @@ import 'auth_settings_screen.dart';
 import 'channel_manager_screen.dart';
 import 'js8call_settings_screen.dart';
 import 'map_cache_settings_screen.dart';
+import 'radio_debug_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,11 +20,22 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+// Known Benshi-protocol radio name prefixes and Vero OUI
+bool _isLikelyRadio(device) {
+  final name = ((device.name ?? '') as String).toUpperCase();
+  final mac  = (device.address as String).toUpperCase();
+  if (name.startsWith('VR-N'))   return true; // Vero VR-N series
+  if (name.startsWith('UV-PRO')) return true; // BTech UV-Pro (same protocol)
+  if (name.startsWith('VR-N76')) return true; // exact default name
+  if (mac.startsWith('38:D2:00')) return true; // Vero/VGC OUI
+  return false;
+}
+
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isScanning = false;
+  bool _showAllDevices = false;
   String _callsign = '';
   String _sameCode = '';
-  String _spotterAppId = '4f2e07d475ae4';
   bool _igateEnabled = false;
 
   @override
@@ -35,10 +47,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _callsign     = prefs.getString('callsign')        ?? '';
-      _sameCode     = prefs.getString('same_code')       ?? '';
-      _spotterAppId = prefs.getString('spotter_app_id')  ?? '4f2e07d475ae4';
-      _igateEnabled = prefs.getBool('igate_enabled')     ?? false;
+      _callsign     = prefs.getString('callsign')  ?? '';
+      _sameCode     = prefs.getString('same_code') ?? '';
+      _igateEnabled = prefs.getBool('igate_enabled') ?? false;
     });
   }
 
@@ -85,18 +96,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ─── Paired Devices List ─────────────────────
           if (radio.pairedDevices.isNotEmpty) ...[
-            _SectionHeader('Paired Devices'),
-            ...radio.pairedDevices.map((device) => ListTile(
-              leading: const Icon(Icons.radio, color: Colors.blue),
-              title: Text(device.name ?? 'Unknown', style: const TextStyle(color: Colors.white)),
-              subtitle: Text(device.address, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-              trailing: ElevatedButton(
-                onPressed: radio.connectionState == RadioConnectionState.connecting
-                    ? null
-                    : () => radio.connect(device),
-                child: const Text('Connect'),
+            _SectionHeader(
+              _showAllDevices
+                  ? 'All Paired Devices'
+                  : 'Compatible Radios',
+            ),
+            ...(_showAllDevices
+                    ? radio.pairedDevices
+                    : radio.pairedDevices.where(_isLikelyRadio).toList())
+                .map((device) => ListTile(
+                      leading: const Icon(Icons.radio, color: Colors.blue),
+                      title: Text(device.name ?? 'Unknown',
+                          style: const TextStyle(color: Colors.white)),
+                      subtitle: Text(device.address,
+                          style: const TextStyle(
+                              color: Colors.white38, fontSize: 11)),
+                      trailing: ElevatedButton(
+                        onPressed:
+                            radio.connectionState == RadioConnectionState.connecting
+                                ? null
+                                : () => radio.connect(device),
+                        child: const Text('Connect'),
+                      ),
+                    )),
+            // Show hint if filter hid some devices
+            if (!_showAllDevices &&
+                radio.pairedDevices.where(_isLikelyRadio).length <
+                    radio.pairedDevices.length)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      '${radio.pairedDevices.length - radio.pairedDevices.where(_isLikelyRadio).length} non-radio device(s) hidden',
+                      style: const TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => setState(() => _showAllDevices = true),
+                      child: const Text('Show all',
+                          style: TextStyle(fontSize: 11)),
+                    ),
+                  ],
+                ),
+              )
+            else if (_showAllDevices)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: TextButton(
+                  onPressed: () => setState(() => _showAllDevices = false),
+                  child: const Text('Show radios only',
+                      style: TextStyle(fontSize: 11)),
+                ),
               ),
-            )),
           ],
 
           // ─── Callsign ────────────────────────────────
@@ -183,19 +235,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (v) => _setIgateEnabled(v),
           ),
 
-          // ─── Spotter Network ─────────────────────────
-          _SectionHeader('Spotter Network'),
-          ListTile(
-            leading: const Icon(Icons.cloud_outlined, color: Colors.orange),
-            title: const Text('App ID', style: TextStyle(color: Colors.white)),
-            subtitle: Text(
-              _spotterAppId,
-              style: const TextStyle(color: Colors.white38, fontSize: 11, fontFamily: 'monospace'),
-            ),
-            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
-            onTap: () => _editSpotterAppId(context),
-          ),
-
           // ─── Track Recording ─────────────────────────
           _SectionHeader('Track Recording'),
           ListTile(
@@ -218,6 +257,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MapCacheSettingsScreen())),
+          ),
+
+          // ─── Debug ───────────────────────────────────
+          _SectionHeader('Debug'),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined, color: Colors.redAccent),
+            title: const Text('Radio Protocol Debug', style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Raw HEX terminal for packet analysis',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const RadioDebugScreen())),
           ),
 
           // ─── About ───────────────────────────────────
@@ -319,47 +370,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('same_code', value);
               setState(() => _sameCode = value);
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Saved! ✓'),
-                    duration: Duration(seconds: 2),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _editSpotterAppId(BuildContext context) {
-    final controller = TextEditingController(text: _spotterAppId);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[850],
-        title: const Text('Spotter Network App ID', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'e.g. 4f2e07d475ae4',
-            hintStyle: TextStyle(color: Colors.white38),
-          ),
-          style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final value = controller.text.trim();
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setString('spotter_app_id', value);
-              setState(() => _spotterAppId = value);
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

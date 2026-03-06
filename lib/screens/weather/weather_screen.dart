@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/noaa_service.dart';
 import '../../services/gps_service.dart';
+import '../../services/weather_alert_controller.dart';
 import '../../bluetooth/radio_service.dart';
 import '../../models/nwr_station.dart';
 import '../../models/weather_alert.dart';
@@ -18,6 +19,8 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
+  NwrStation? _selectedStation;
+
   @override
   void initState() {
     super.initState();
@@ -25,17 +28,21 @@ class _WeatherScreenState extends State<WeatherScreen> {
   }
 
   Future<void> _refresh() async {
-    final gps  = context.read<GpsService>();
-    final noaa = context.read<NoaaService>();
+    final gps        = context.read<GpsService>();
+    final noaa       = context.read<NoaaService>();
+    final alertCtrl  = context.read<WeatherAlertController>();
     if (gps.hasPosition) {
       await noaa.refresh(gps.latitude!, gps.longitude!);
+      await alertCtrl.checkNow();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final noaa  = context.watch<NoaaService>();
-    final gps   = context.watch<GpsService>();
+    final noaa      = context.watch<NoaaService>();
+    final gps       = context.watch<GpsService>();
+    final alertCtrl = context.watch<WeatherAlertController>();
+    final radio     = context.watch<RadioService>();
 
     return Scaffold(
       appBar: AppBar(
@@ -61,6 +68,13 @@ class _WeatherScreenState extends State<WeatherScreen> {
               onRefresh: _refresh,
               child: ListView(
                 children: [
+                  // ─── Emergency Alert Banner ────────────
+                  if (alertCtrl.hasEmergencyAlert)
+                    _EmergencyAlertBanner(
+                      freq: alertCtrl.autoTunedFreq!,
+                      onDismiss: alertCtrl.clearLock,
+                    ),
+
                   // ─── GPS Location ──────────────────────
                   _LocationBar(gps: gps),
 
@@ -74,6 +88,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     ...noaa.alerts.map((a) => _AlertCard(alert: a)),
                   ] else if (!noaa.isLoading)
                     const _NoAlertsCard(),
+
+                  // ─── Selected Station Tune Panel ───────
+                  if (_selectedStation != null)
+                    _SelectedStationPanel(
+                      station: _selectedStation!,
+                      radio: radio,
+                      onClear: () => setState(() => _selectedStation = null),
+                    ),
 
                   // ─── NOAA WX Channels ──────────────────
                   _SectionHeader('NOAA WX Channels'),
@@ -93,11 +115,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           style: TextStyle(color: Colors.white54)),
                     )
                   else
-                    ...noaa.stations
-                        .take(20)
-                        .map((s) => _NwrStationCard(station: s)),
+                    ...noaa.stations.take(20).map((s) => _NwrStationCard(
+                          station: s,
+                          isSelected: _selectedStation == s,
+                          onSelect: () =>
+                              setState(() => _selectedStation = s),
+                        )),
 
-                  const SizedBox(height: 80), // FAB clearance
+                  const SizedBox(height: 80),
                 ],
               ),
             )
@@ -252,28 +277,140 @@ class _AlertCard extends StatelessWidget {
   }
 }
 
-class _NwrStationCard extends StatelessWidget {
-  final NwrStation station;
-  const _NwrStationCard({required this.station});
+// ─── Emergency Alert Banner ───────────────────────────────────────────────────
+
+class _EmergencyAlertBanner extends StatelessWidget {
+  final String freq;
+  final VoidCallback onDismiss;
+  const _EmergencyAlertBanner({required this.freq, required this.onDismiss});
 
   @override
   Widget build(BuildContext context) {
-    final radio = context.watch<RadioService>();
+    return Container(
+      width: double.infinity,
+      color: Colors.red[900],
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_rounded, color: Colors.white, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'EMERGENCY ALERT: AUTO-TUNED TO $freq',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onDismiss,
+            child: const Text('DISMISS',
+                style: TextStyle(color: Colors.white70, fontSize: 11)),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
+// ─── Selected Station Tune Panel ──────────────────────────────────────────────
+
+class _SelectedStationPanel extends StatelessWidget {
+  final NwrStation station;
+  final RadioService radio;
+  final VoidCallback onClear;
+  const _SelectedStationPanel(
+      {required this.station, required this.radio, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[900],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue, width: 1),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(station.callSign,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
+                Text('${station.city}, ${station.state}  •  ${station.displayFreq}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.radio, size: 16),
+            label: const Text('Tap Radio to Tune',
+                style: TextStyle(fontSize: 12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  radio.isConnected ? Colors.green[700] : Colors.grey[700],
+            ),
+            onPressed: radio.isConnected
+                ? () {
+                    radio.tuneToFrequency(station.frequency);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          'Tuned VFO A → ${station.callSign} ${station.displayFreq}'),
+                      backgroundColor: Colors.blue[800],
+                      duration: const Duration(seconds: 2),
+                    ));
+                  }
+                : null,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+            onPressed: onClear,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── NWR Station Card ─────────────────────────────────────────────────────────
+
+class _NwrStationCard extends StatelessWidget {
+  final NwrStation station;
+  final bool isSelected;
+  final VoidCallback onSelect;
+  const _NwrStationCard(
+      {required this.station,
+      required this.isSelected,
+      required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
     return ListTile(
+      tileColor: isSelected ? Colors.blue[900]!.withOpacity(0.3) : null,
       leading: CircleAvatar(
-        backgroundColor: Colors.blue[900],
+        backgroundColor: isSelected ? Colors.blue[700] : Colors.blue[900],
         radius: 22,
         child: Text(
           station.displayFreq.split(' ')[0],
-          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
       ),
-      title: Text(
-        station.callSign,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
+      title: Text(station.callSign,
+          style: const TextStyle(
+              color: Colors.white, fontWeight: FontWeight.bold)),
       subtitle: Text(
         '${station.city}, ${station.state}  •  ${station.displayFreq}',
         style: const TextStyle(color: Colors.white54, fontSize: 12),
@@ -282,34 +419,22 @@ class _NwrStationCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (station.distanceMiles != null)
-            Text(
-              station.displayDistance,
-              style: const TextStyle(color: Colors.blue, fontSize: 12),
-            ),
+            Text(station.displayDistance,
+                style: const TextStyle(color: Colors.blue, fontSize: 12)),
           const SizedBox(width: 8),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: radio.isConnected ? Colors.blue[700] : Colors.grey[700],
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              backgroundColor:
+                  isSelected ? Colors.blue[600] : Colors.grey[700],
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               minimumSize: Size.zero,
             ),
-            onPressed: radio.isConnected
-                ? () => _tuneStation(context, radio, station)
-                : null,
-            child: const Text('Tune', style: TextStyle(fontSize: 12)),
+            onPressed: onSelect,
+            child: Text(isSelected ? 'Selected' : 'Tap to Select',
+                style: const TextStyle(fontSize: 11)),
           ),
         ],
-      ),
-    );
-  }
-
-  void _tuneStation(BuildContext context, RadioService radio, NwrStation station) {
-    radio.tuneToFrequency(station.frequency);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Tuned to ${station.callSign} — ${station.displayFreq}'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.blue[800],
       ),
     );
   }
