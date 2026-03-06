@@ -180,6 +180,32 @@ class RadioService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Tune Band B (dual-watch) VFO to [frequencyMhz] with FM+Wide, no tone.
+  Future<bool> tuneBandB(double frequencyMhz) async {
+    _assertSynced();
+    try {
+      final ch = _controller!.channelB;
+      if (ch == null) throw RadioException('Band B channel not loaded');
+      final updated = ch.copyWith(
+        rxFreq: frequencyMhz,
+        txFreq: frequencyMhz,
+        txMod: ModulationType.FM,
+        rxMod: ModulationType.FM,
+        bandwidth: BandwidthType.WIDE,
+        txSubAudio: 0,
+        rxSubAudio: 0,
+      );
+      await _controller!.writeChannel(updated);
+      debugPrint('OpenHT: tuneBandB → ${frequencyMhz}MHz FM no-tone');
+    } catch (e) {
+      _errorMessage = 'Band B tune failed: $e';
+      notifyListeners();
+      return false;
+    }
+    notifyListeners();
+    return true;
+  }
+
   Future<bool> tuneToFrequency(double frequencyMhz) async {
     _assertSynced();
     try {
@@ -287,6 +313,44 @@ class RadioService extends ChangeNotifier {
     }
   }
 
+  /// Write a single channel into [groupIndex] (0-5 for UI Groups 1-6), [slotIndex] (0-31).
+  ///
+  /// Used by FreqPlanService for served-agency frequency plans.
+  Future<bool> writeRegionChannel({
+    required int    groupIndex,
+    required int    slotIndex,
+    required double rxFreqMhz,
+    required double txFreqMhz,
+    double?         ctcssHz,
+    required String name,
+  }) async {
+    _assertSynced();
+    try {
+      final channelId = groupIndex * 32 + slotIndex;
+      final ch = Channel(
+        channelId:    channelId,
+        txMod:        ModulationType.FM,
+        rxMod:        ModulationType.FM,
+        txFreq:       txFreqMhz,
+        rxFreq:       rxFreqMhz,
+        txSubAudio:   ctcssHz,
+        rxSubAudio:   ctcssHz,
+        bandwidth:    BandwidthType.WIDE,
+        scan:         true,
+        txAtMaxPower: false,
+        txAtMedPower: true,
+        name:         name.length > 10 ? name.substring(0, 10) : name,
+      );
+      await _controller!.writeChannel(ch);
+      debugPrint('OpenHT: writeRegionChannel G${groupIndex + 1}:$slotIndex → ${rxFreqMhz}MHz');
+      return true;
+    } catch (e) {
+      _errorMessage = 'Region channel write failed: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Write NOAA weather channels into Group 4.
   Future<int> writeNoaaGroup() async {
     _assertSynced();
@@ -299,8 +363,11 @@ class RadioService extends ChangeNotifier {
           channelId: 4 * 32 + i,
           rxFreq: freqMhz,
           txFreq: freqMhz,
-          rxSubAudio: null,
-          txSubAudio: null,
+          rxSubAudio: 0,   // 0 = no tone (null falls through copyWith to old value)
+          txSubAudio: 0,
+          txMod: ModulationType.FM,
+          rxMod: ModulationType.FM,
+          bandwidth: BandwidthType.WIDE,
           name: name,
         );
         await _controller!.writeChannel(ch);
@@ -337,7 +404,7 @@ class RadioService extends ChangeNotifier {
     final toWrite = channels.take(32).toList();
     for (int i = 0; i < toWrite.length; i++) {
       final entry = toWrite[i];
-      final channelId = i; // slots 0-31 of the currently active group
+      final channelId = 5 * 32 + i; // Group 6 (0-indexed group 5), channels 160–191
       try {
         final ch = Channel(
           channelId: channelId,

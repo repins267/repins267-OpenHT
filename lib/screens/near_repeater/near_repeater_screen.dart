@@ -494,17 +494,6 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
-          if (selCount > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-              child: Chip(
-                label: Text('$selCount selected',
-                    style: const TextStyle(fontSize: 11, color: Colors.white)),
-                backgroundColor: Colors.blue[700],
-                onDeleted: () => setState(() => _selectedRepeaters.clear()),
-                deleteIconColor: Colors.white70,
-              ),
-            ),
           if (_isWritingGroup)
             const Padding(
               padding: EdgeInsets.all(14),
@@ -515,12 +504,16 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.save_alt),
-              tooltip: selCount > 0
-                  ? 'Write $selCount selected to "Near Repeaters" Group 6'
-                  : 'Write closest 32 to "Near Repeaters" Group 6',
-              onPressed: _isLoading ? null : _writeGroupToRadio,
+            Badge(
+              isLabelVisible: selCount > 0,
+              label: Text('$selCount'),
+              child: IconButton(
+                icon: const Icon(Icons.save_alt),
+                tooltip: selCount > 0
+                    ? 'Write $selCount selected to Group 6'
+                    : 'Write closest 32 to Group 6',
+                onPressed: _isLoading ? null : _writeGroupToRadio,
+              ),
             ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -530,10 +523,20 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (v) {
-              if (v == 'import') _importGpx();
-              if (v == 'clear')  _clearImportedGpx();
+              if (v == 'deselect') setState(() => _selectedRepeaters.clear());
+              if (v == 'import')   _importGpx();
+              if (v == 'clear')    _clearImportedGpx();
             },
             itemBuilder: (_) => [
+              if (selCount > 0)
+                PopupMenuItem(
+                  value: 'deselect',
+                  child: ListTile(
+                    leading: const Icon(Icons.deselect),
+                    title: Text('Clear $selCount selected'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               const PopupMenuItem(
                 value: 'import',
                 child: ListTile(

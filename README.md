@@ -1,6 +1,6 @@
 ﻿# OpenHT
 
-> Open-source Android controller for VGC / Benshi-protocol radios with Near Repeater, APRS map, and Android Auto support.
+> Open-source Android controller for VGC / Benshi-protocol radios with Near Repeater, APRS map, Weather Monitoring, and Android Auto support.
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)]()
@@ -53,6 +53,7 @@ The vendor **HT / BS HT** app works, but has significant gaps:
 - No offline repeater database — useless without cell service
 - No Android Auto integration — dangerous to use while driving
 - No open APRS station map with POI markers
+- No NOAA weather alerts or NWR auto-monitoring
 - Closed source — no ability to fix bugs or extend features
 
 OpenHT fills those gaps.
@@ -62,19 +63,55 @@ OpenHT fills those gaps.
 ## Features
 
 ### ✅ Implemented
+
+#### Radio Control
 - **Bluetooth connection** to radio via RFCOMM (Bluetooth Classic)
-- **Near Repeater** — GPS-based lookup of closest open repeaters from RepeaterBook API
-  - Sort by distance, filter by band (2m / 70cm), open/closed status
-  - One-tap tune: pushes frequency directly to radio via BT
-  - Batch write up to 32 nearest repeaters to radio Group 6
-  - **Offline cache** — SQLite local DB for use without cell service
-- **APRS Map** — displays decoded APRS beacons as POI markers on OpenStreetMap
-- **Dashboard** — frequency display, battery state, TX/RX status, GPS lock
-- **Dark theme** — designed for vehicle/night use
+- **VFO tuning** — push any frequency to Band A or Band B with FM + Wide forced
+- **Channel write** — write named channels with CTCSS/DCS tones to any group/slot
+- **Band B auto-tune** — tune Band B to NOAA Weather Radio or SKYWARN frequency on alert
+
+#### Near Repeater
+- GPS-based lookup of closest open repeaters
+- 3-tier data fallback: RepeaterBook Content Provider (live) → imported GPX → bundled Colorado GPX
+- Sort by distance, filter by band (2m / 70cm), FM-compatible filter
+- One-tap tune: pushes frequency directly to radio via Bluetooth
+- Batch write up to 32 nearest repeaters to radio Group 6
+- Data source indicator (live / GPX / CO) shown in AppBar
+
+#### APRS
+- Live APRS station map with decoded packet markers on OpenStreetMap
+- Station list with GPS-relative distance
+- Beacon and iGate configuration (in Settings)
+- Spotter Network overlay
+
+#### Weather Monitoring
+- **NOAA Weather Alerts** via NWS API — 5-minute background polling
+- Push notifications for Extreme and Severe alerts (POST_NOTIFICATIONS permission)
+- Client-side SAME code filtering — only alerts matching your county FIPS
+- Alert deduplication — each alert ID notified only once per session
+- **NWR Station list** — distance-sorted nearest Weather Radio transmitters
+  - Live fetch from NOAA; silently falls back to bundled CO/KS stations when offline
+- NWR auto-monitor — tunes Band B to nearest NWR transmitter
+
+#### Emergency Auto-Tune
+- Polls NWS every 60 seconds for Tornado and Severe Thunderstorm Warnings
+- **Priority 1**: Auto-tunes to served-agency SKYWARN repeater from loaded frequency plan
+- **Priority 2**: Falls back to nearest NWR transmitter matching the alerted county SAME code
+- Frequency lock for 5 minutes with dismissable banner
+
+#### Frequency Plans (Deploy Mode)
+- JSON-based frequency plan format — define repeater/simplex/SKYWARN channels for a region
+- Write an entire plan to a radio group (e.g., Group 3) with one tap, streaming progress
+- FIPS-linked: emergency auto-tune looks up the plan by county FIPS code
+- Bundled plan: `ppraa_el_paso.json` (El Paso County, CO — PPARES, SKYWARN, PPRAA, RACES, PUEBLO WX, NOAA WX)
+
+#### Settings & Developer Tools
+- Restructured settings: Weather Monitoring, APRS, Frequency Plans, Channels & Radio, Developer
+- **Channel Manager** — browse, edit, and export radio channels as CSV
+- **Radio Debug Terminal** — live HEX log of TX/RX bytes, manual tune/scan buttons
 
 ### 🚧 In Progress
-- Android Auto UI (List template for repeater selection, Nav template for APRS map)
-- Full CTCSS/DCS tone programming when tuning
+- Android Auto UI (CarAppService declared; List template for repeater selection)
 - Audio streaming over BT headset (requires libsbc bindings in flutter_benlink)
 - Winlink / BBS integration (port from HtStation)
 - BLE connection mode (in addition to RFCOMM)
@@ -82,7 +119,7 @@ OpenHT fills those gaps.
 ### 📋 Planned
 - Offline repeater DB download by state
 - APRS beacon transmission (with callsign + smart beaconing)
-- Channel group management / import-export
+- Additional regional frequency plans (submit a PR!)
 - APK sideload without Play Store
 
 ---
@@ -91,24 +128,39 @@ OpenHT fills those gaps.
 
 ```
 lib/
-├── main.dart                       # App entry, Provider setup, bottom nav
+├── main.dart                          # App entry, Provider setup, notifications init
 ├── bluetooth/
-│   └── radio_service.dart          # Wraps flutter_benlink RadioController
-├── repeaterbook/
-│   └── repeaterbook_client.dart    # RepeaterBook API client
-├── aprs/
-│   ├── aprs_packet.dart            # APRS packet parser
-│   └── aprs_service.dart           # Packet stream manager
-├── services/
-│   ├── gps_service.dart            # Continuous GPS tracking
-│   └── repeater_cache.dart         # SQLite repeater cache
+│   └── radio_service.dart             # Wraps flutter_benlink; VFO tune, channel write, Band B
 ├── models/
-│   └── repeater.dart               # Repeater data model
+│   ├── repeater.dart
+│   ├── nwr_station.dart               # NOAA Weather Radio transmitter model
+│   └── weather_alert.dart             # NWS alert with SAME codes + id
+├── services/
+│   ├── gps_service.dart               # Continuous GPS tracking
+│   ├── noaa_service.dart              # NWR stations + NWS alerts + polling + notifications
+│   ├── weather_alert_controller.dart  # Emergency auto-tune (SKYWARN plan → NWR fallback)
+│   ├── freq_plan_service.dart         # Load & write regional frequency plans (Stream<int>)
+│   ├── repeaterbook_connect_service.dart  # RepeaterBook Content Provider bridge
+│   └── repeater_cache.dart            # SQLite repeater cache
+├── aprs/
+│   ├── aprs_packet.dart               # APRS packet parser
+│   └── aprs_service.dart              # Packet stream manager
 └── screens/
-    ├── dashboard/                  # Main radio status screen
-    ├── near_repeater/              # Near Repeater feature (★ core)
-    ├── aprs_map/                   # APRS stations on map
-    └── settings/                  # BT connect + app config
+    ├── dashboard/                     # Main radio status screen
+    ├── near_repeater/                 # Near Repeater (3-tier data, batch write)
+    ├── aprs_map/                      # APRS stations on OpenStreetMap
+    ├── weather/                       # NWR stations + active alerts list
+    └── settings/                      # Weather, APRS, Freq Plans, Channels, Developer
+```
+
+### Assets
+```
+assets/
+├── repeaters/                         # Bundled CO repeater GPX (offline fallback)
+├── transmitters/
+│   └── test_transmitters.json         # Bundled NWR transmitters (CO + KS)
+└── freq_plans/
+    └── ppraa_el_paso.json             # El Paso County, CO frequency plan
 ```
 
 ---
@@ -145,23 +197,63 @@ flutter run
 
 ```
 GPS fix
-  → Query RepeaterBook API (lat/lon/radius/band)
-  → Cache to local SQLite (works offline after first load)
-  → Display sorted list (distance, tone, status)
+  → Query RepeaterBook Content Provider (live, if RB app installed)
+  → OR: load user-imported GPX file
+  → OR: load bundled Colorado GPX (always available offline)
+  → Display sorted list (distance, tone, FM filter, band)
   → Tap repeater → push VFO frequency to radio via Bluetooth
   → OR: "Write to Radio" → batch program Group 6 with top 32 results
 ```
 
 ---
 
+## Weather Alert Flow
+
+```
+WeatherAlertController (60s poll)
+  → NWS API: active alerts for GPS position
+  → Match: Tornado Warning or Severe Thunderstorm Warning
+  → Check SAME code against loaded frequency plans
+      → Found SKYWARN channel? → Auto-tune Band A (Priority 1)
+      → No plan? → NWR transmitter by SAME code → Auto-tune Band A (Priority 2)
+  → Lock frequency 5 min, show dismissable banner
+
+NoaaService (5 min poll — Weather tab)
+  → NWS API: all active alerts for position
+  → Filter by SAME code (user's county FIPS)
+  → Push notification for Extreme / Severe alerts (deduped by alert ID)
+```
+
+---
+
+## Frequency Plan Format
+
+Plans live in `assets/freq_plans/<id>.json`:
+
+```json
+{
+  "id": "ppraa_el_paso",
+  "name": "PPRAA / El Paso County ARES",
+  "fips": "008041",
+  "channels": [
+    { "slot": 0, "name": "PPARES",  "rx_mhz": 147.345, "tx_mhz": 146.745, "tone_hz": 107.2 },
+    { "slot": 1, "name": "SKYWARN", "rx_mhz": 146.970, "tx_mhz": 146.370, "tone_hz": 100.0 }
+  ]
+}
+```
+
+`fips` must match the 6-digit county code used in NWS SAME codes.
+The channel named `SKYWARN` is used for emergency auto-tune.
+
+---
+
 ## Android Auto
 
-OpenHT declares a `CarAppService` targeting the **Navigation** category.  
+OpenHT declares a `CarAppService` targeting the **Navigation** category.
 Android Auto UI will use:
 
 - **List template** — browse Near Repeater results while driving
 - **Navigation template** — APRS map with POI markers
-- **Message template** — incoming APRS messages
 
 > ⚠️ Android Auto requires testing with the [Desktop Head Unit (DHU)](https://developer.android.com/training/cars/testing/dhu) emulator before deployment.
 
@@ -179,6 +271,7 @@ This project stands on the shoulders of:
 | [HtStation](https://github.com/Ylianst/HtStation) | Ylianst | Node.js base station — architecture inspiration |
 | [HTCommander](https://github.com/Ylianst/HTCommander) | Ylianst | Windows desktop client — feature reference |
 | [RepeaterBook](https://www.repeaterbook.com) | RepeaterBook.com | Repeater database API |
+| [NOAA / NWS](https://www.weather.gov) | NOAA | Weather alerts API and NWR transmitter data |
 
 ---
 
@@ -195,10 +288,11 @@ Apache-2.0 — see [LICENSE](LICENSE)
 
 PRs welcome. Areas of highest value right now:
 
-1. **CTCSS/DCS tone write** when tuning — needs flutter_benlink API expansion
-2. **Android Auto** CarAppService implementation
-3. **Audio streaming** — BT headset TX/RX
-4. **Testing** with UV-Pro, GA-5WB, VR-N7500 hardware
+1. **Regional frequency plans** — add a JSON plan for your county/ARES group
+2. **Android Auto** CarAppService full implementation
+3. **APRS beacon TX** — smart beaconing with callsign config
+4. **Audio streaming** — BT headset TX/RX (needs flutter_benlink libsbc bindings)
+5. **Testing** with UV-Pro, GA-5WB, VR-N7500 hardware
 
 Please open an issue before starting large features.
 

@@ -52,14 +52,20 @@ dependencies:
   # File system paths (GPX track recording, tile caching)
   path_provider: ^2.1.0
 
-  # File picker for importing Repeaterbook GPX exports
+  # File picker for importing Repeaterbook GPX exports and CSV channel files
   file_picker: ^8.0.0
+
+  # Share sheet for exporting CSV files
+  share_plus: ^10.0.0
 
   # HMAC authentication for APRS messages (optional pre-shared key signing)
   crypto: ^3.0.3
 
   # Encrypted key storage using Android Keystore (for APRS auth keys)
   flutter_secure_storage: ^9.0.0
+
+  # Local notifications for weather alerts
+  flutter_local_notifications: ^17.2.4
 
   # APRS parsing (port of aprs-parser by Lee K0QED)
   # (implemented locally in lib/aprs/)
@@ -76,3 +82,5 @@ flutter:
     - assets/
     - assets/repeaters/
     - assets/manuals/
+    - assets/transmitters/
+    - assets/freq_plans/

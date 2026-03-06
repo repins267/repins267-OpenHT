@@ -1,0 +1,15 @@
+{
+  "id": "ppraa_el_paso",
+  "name": "PPRAA / PPARES — El Paso County",
+  "fips": "008041",
+  "channels": [
+    {"slot": 0, "name": "PPARES", "rxMhz": 147.345, "txMhz": 146.745, "tone": 107.2, "notes": "Primary — PPARES net Tuesdays 1900L"},
+    {"slot": 1, "name": "SKYWARN", "rxMhz": 146.970, "txMhz": 146.370, "tone": 100.0, "notes": "CS SKYWARN primary — K0ESD Pikes Peak"},
+    {"slot": 2, "name": "PPRAA", "rxMhz": 147.345, "txMhz": 146.745, "tone": 107.2, "notes": "PPRAA Thursday net 2000L"},
+    {"slot": 3, "name": "SIMPLEX", "rxMhz": 146.520, "txMhz": 146.520, "tone": 0.0, "notes": "National 2m calling"},
+    {"slot": 4, "name": "CAR2CAR", "rxMhz": 446.000, "txMhz": 446.000, "tone": 0.0, "notes": "SKYWARN car-to-car UHF"},
+    {"slot": 5, "name": "RACES", "rxMhz": 147.345, "txMhz": 146.745, "tone": 107.2, "notes": "EOC activation (same repeater)"},
+    {"slot": 6, "name": "PUEBLO WX", "rxMhz": 146.790, "txMhz": 146.190, "tone": 88.5, "notes": "Pueblo SKYWARN / NWS Pueblo"},
+    {"slot": 7, "name": "NOAA WX", "rxMhz": 162.400, "txMhz": 162.400, "tone": 0.0, "notes": "WX1 — nearest NWR"}
+  ]
+}

@@ -34,8 +34,8 @@ class _StationListScreenState extends State<StationListScreen> {
   Widget build(BuildContext context) {
     final aprs = context.watch<AprsService>();
     final gps = context.watch<GpsService>();
-    final myLat = gps.currentPosition?.latitude;
-    final myLon = gps.currentPosition?.longitude;
+    final myLat = gps.latitude;
+    final myLon = gps.longitude;
 
     var stations = aprs.stations.where((s) => s.hasPosition).toList();
 

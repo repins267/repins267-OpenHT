@@ -28,7 +28,7 @@ import '../../services/aprs_map_settings.dart';
 import '../aprs/station_detail_screen.dart';
 import '../aprs/message_thread_screen.dart';
 
-enum _RepeaterSource { repeaterBook, importedGpx, bundledGpx }
+enum _RepeaterSource { repeaterBook, cachedLive, importedGpx, bundledGpx }
 
 // ─── Repeater data model (map use only) ──────────────────────────────────────
 
@@ -214,7 +214,30 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
       debugPrint('MapScreen: RepeaterBook provider failed: $e');
     }
 
-    // Tier 2: Imported GPX cache
+    // Tier 2: Cached live data from previous RepeaterBook query
+    if (RepeaterBookConnectService.hasCachedData) {
+      final all = RepeaterBookConnectService.cachedRepeaters
+          .where((r) => r.isFmCompatible)
+          .map((r) => _MapRepeater(
+            lat: r.lat, lon: r.lon,
+            callsign: r.callsign,
+            outputFreq: r.outputFreq,
+            inputFreq: r.inputFreq,
+            offsetDir: r.outputFreq > r.inputFreq ? '-' : (r.outputFreq < r.inputFreq ? '+' : ''),
+            ctcssHz: r.ctcssHz,
+            band: r.band,
+            serviceText: r.serviceText,
+            distanceMiles: 0,
+          )).toList();
+      debugPrint('MapScreen: Loaded ${all.length} repeaters from cached live data');
+      if (mounted) setState(() {
+        _repeaters = all;
+        _repeaterSource = _RepeaterSource.cachedLive;
+      });
+      return;
+    }
+
+    // Tier 3: Imported GPX cache
     if (rbService.hasData) {
       final all = rbService.repeaters.map((r) => _MapRepeater(
         lat: r.lat, lon: r.lon,
@@ -669,6 +692,7 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
               subtitle: Text(
                 switch (_repeaterSource) {
                   _RepeaterSource.repeaterBook => 'Live · RepeaterBook app · FM only',
+                  _RepeaterSource.cachedLive   => 'Cached live · RepeaterBook · FM only',
                   _RepeaterSource.importedGpx  => 'Imported GPX · FM only',
                   _RepeaterSource.bundledGpx   => 'Bundled CO fallback · FM only',
                 },
@@ -1175,6 +1199,7 @@ class _RepeaterCountChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = switch (source) {
       _RepeaterSource.repeaterBook => '$count rptrs (live)',
+      _RepeaterSource.cachedLive   => '$count rptrs (cached)',
       _RepeaterSource.importedGpx  => '$count rptrs (GPX)',
       _RepeaterSource.bundledGpx   => '$count rptrs (CO)',
     };

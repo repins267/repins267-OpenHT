@@ -1,6 +1,8 @@
 // lib/models/nwr_station.dart
 // NOAA Weather Radio station model
 
+import 'dart:convert';
+
 class NwrStation {
   final String callSign;
   final double frequency; // MHz, e.g. 162.400
@@ -27,4 +29,29 @@ class NwrStation {
   String get displayDistance => distanceMiles != null
       ? '${distanceMiles!.toStringAsFixed(1)} mi'
       : '';
+
+  Map<String, dynamic> toJson() => {
+    'callSign': callSign, 'frequency': frequency,
+    'city': city, 'state': state,
+    'lat': lat, 'lon': lon,
+    'sameCode': sameCode,
+  };
+
+  factory NwrStation.fromJson(Map<String, dynamic> j) => NwrStation(
+    callSign:  j['callSign']  as String,
+    frequency: (j['frequency'] as num).toDouble(),
+    city:      j['city']      as String,
+    state:     j['state']     as String,
+    lat:       (j['lat']      as num).toDouble(),
+    lon:       (j['lon']      as num).toDouble(),
+    sameCode:  j['sameCode']  as String?,
+  );
+
+  static String listToJson(List<NwrStation> list) =>
+      jsonEncode(list.map((s) => s.toJson()).toList());
+
+  static List<NwrStation> listFromJson(String raw) {
+    final list = jsonDecode(raw) as List<dynamic>;
+    return list.map((e) => NwrStation.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }

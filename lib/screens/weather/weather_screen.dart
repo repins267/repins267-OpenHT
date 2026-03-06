@@ -359,12 +359,14 @@ class _SelectedStationPanel extends StatelessWidget {
                   radio.isConnected ? Colors.green[700] : Colors.grey[700],
             ),
             onPressed: radio.isConnected
-                ? () {
-                    radio.tuneToFrequency(station.frequency);
+                ? () async {
+                    final ok = await radio.tuneToFrequency(station.frequency);
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                          'Tuned VFO A → ${station.callSign} ${station.displayFreq}'),
-                      backgroundColor: Colors.blue[800],
+                      content: Text(ok
+                          ? 'Tuned VFO A → ${station.callSign} ${station.displayFreq}'
+                          : 'Tune failed: ${radio.errorMessage}'),
+                      backgroundColor: ok ? Colors.blue[800] : Colors.red[700],
                       duration: const Duration(seconds: 2),
                     ));
                   }
@@ -469,13 +471,16 @@ class _NoaaChannelSelector extends StatelessWidget {
             backgroundColor: Colors.blue[900],
             side: const BorderSide(color: Colors.blue, width: 0.5),
             onPressed: radio.isConnected
-                ? () {
-                    radio.tuneToFrequency(freq);
+                ? () async {
+                    final ok = await radio.tuneToFrequency(freq);
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Tuned to $label — $freq MHz'),
+                        content: Text(ok
+                            ? 'Tuned to $label — $freq MHz'
+                            : 'Tune failed: ${radio.errorMessage}'),
                         duration: const Duration(seconds: 2),
-                        backgroundColor: Colors.blue[800],
+                        backgroundColor: ok ? Colors.blue[800] : Colors.red[700],
                       ),
                     );
                   }

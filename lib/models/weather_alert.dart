@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 
 class WeatherAlert {
+  final String id;   // NWS alert ID for deduplication
   final String event;
   final String severity; // 'Extreme', 'Severe', 'Moderate', 'Minor', 'Unknown'
   final String headline;
@@ -13,6 +14,7 @@ class WeatherAlert {
   final List<String> sameCodes; // FIPS/SAME codes from geocode.SAME
 
   const WeatherAlert({
+    required this.id,
     required this.event,
     required this.severity,
     required this.headline,
@@ -27,6 +29,7 @@ class WeatherAlert {
     final geocode = props['geocode'] as Map<String, dynamic>? ?? {};
     final same = (geocode['SAME'] as List<dynamic>? ?? []).cast<String>();
     return WeatherAlert(
+      id:          json['id'] as String? ?? '${props['event']}_${props['expires']}',
       event:       props['event']    as String? ?? 'Weather Alert',
       severity:    props['severity'] as String? ?? 'Unknown',
       headline:    props['headline'] as String? ?? '',

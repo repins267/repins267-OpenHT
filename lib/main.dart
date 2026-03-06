@@ -15,6 +15,7 @@
 // https://github.com/Ylianst/HtStation
 
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 
 import 'bluetooth/radio_service.dart';
@@ -41,7 +42,29 @@ import 'screens/settings/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await RepeaterBookConnectService.loadCache();
+
+  // Set up local notifications for weather alerts
+  final notifs = FlutterLocalNotificationsPlugin();
+  await notifs.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+  );
+  await notifs
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(const AndroidNotificationChannel(
+        'weather_alerts',
+        'Weather Alerts',
+        description: 'NOAA weather alerts for your area',
+        importance: Importance.high,
+      ));
+  NoaaService.initNotifications(notifs);
+
+  await Future.wait([
+    RepeaterBookConnectService.loadCache(),
+    NoaaService.loadCacheStatic(),
+  ]);
   runApp(const OpenHtApp());
 }
 
