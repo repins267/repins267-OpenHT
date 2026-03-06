@@ -95,19 +95,25 @@ class FreqPlanService {
     int groupIndex,
     RadioService radio,
   ) async* {
+    // Switch to channel mode so writes persist to radio memory (same as bulkWriteNearRepeaterGroup).
+    final prevVfoX = await radio.beginBulkWrite();
     int written = 0;
-    for (final ch in plan.channels) {
-      final ok = await radio.writeRegionChannel(
-        groupIndex: groupIndex,
-        slotIndex:  ch.slot,
-        rxFreqMhz:  ch.rxMhz,
-        txFreqMhz:  ch.txMhz,
-        ctcssHz:    ch.tone > 0 ? ch.tone : null,
-        name:       ch.name,
-      );
-      if (ok) written++;
-      yield written;
-      await Future.delayed(const Duration(milliseconds: 150));
+    try {
+      for (final ch in plan.channels) {
+        final ok = await radio.writeRegionChannel(
+          groupIndex: groupIndex,
+          slotIndex:  ch.slot,
+          rxFreqMhz:  ch.rxMhz,
+          txFreqMhz:  ch.txMhz,
+          ctcssHz:    ch.tone > 0 ? ch.tone : null,
+          name:       ch.name,
+        );
+        if (ok) written++;
+        yield written;
+        await Future.delayed(const Duration(milliseconds: 150));
+      }
+    } finally {
+      await radio.endBulkWrite(prevVfoX);
     }
   }
 }

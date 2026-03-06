@@ -29,6 +29,7 @@ import 'services/track_service.dart';
 import 'services/bbs_service.dart';
 import 'services/aprs_auth_service.dart';
 import 'services/aprs_message_service.dart';
+import 'services/audio_service.dart';
 import 'services/weather_alert_controller.dart';
 import 'services/repeaterbook_service.dart';
 import 'services/aprs_map_settings.dart';
@@ -76,6 +77,7 @@ class OpenHtApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RadioService()),
+        ChangeNotifierProvider(create: (_) => AudioService()),
         ChangeNotifierProvider(create: (_) => GpsService()..startTracking()),
         ChangeNotifierProvider(create: (_) => AprsService()),
         ChangeNotifierProvider(create: (_) => AprsIsService()),
@@ -190,9 +192,10 @@ class _OpenHtShellState extends State<OpenHtShell> {
   void _initAdaptiveGps() {
     final radio = context.read<RadioService>();
     final gps   = context.read<GpsService>();
+    final audio = context.read<AudioService>();
 
     radio.addListener(() {
-      // Only switch GPS frequency when connection state actually changes,
+      // Only act when connection state actually changes,
       // not on every radio packet notification.
       final nowConnected = radio.isConnected;
       if (nowConnected == _radioWasConnected) return;
@@ -201,6 +204,7 @@ class _OpenHtShellState extends State<OpenHtShell> {
         gps.setHighFrequency();
       } else {
         gps.setLowFrequency();
+        audio.onRadioDisconnected(); // stop SCO if radio drops
       }
     });
   }

@@ -313,6 +313,29 @@ class RadioService extends ChangeNotifier {
     }
   }
 
+  /// Switch to channel mode (vfoX=0) for bulk writes.
+  /// Returns the previous vfoX value so [endBulkWrite] can restore it.
+  /// Returns null if already in channel mode or settings unavailable.
+  Future<int?> beginBulkWrite() async {
+    _assertSynced();
+    final s = _controller!.settings;
+    if (s == null || s.vfoX == 0) return null;
+    debugPrint('OpenHT: beginBulkWrite — switching to channel mode (vfoX=0)');
+    await _controller!.writeSettings(s.copyWith(vfoX: 0));
+    await Future.delayed(const Duration(milliseconds: 300));
+    return s.vfoX;
+  }
+
+  /// Restore VFO mode after bulk writes; pass the value returned by [beginBulkWrite].
+  Future<void> endBulkWrite(int? prevVfoX) async {
+    if (prevVfoX == null) return;
+    final s = _controller?.settings;
+    if (s == null) return;
+    debugPrint('OpenHT: endBulkWrite — restoring vfoX=$prevVfoX');
+    await _controller!.writeSettings(s.copyWith(vfoX: prevVfoX));
+    await Future.delayed(const Duration(milliseconds: 200));
+  }
+
   /// Write a single channel into [groupIndex] (0-5 for UI Groups 1-6), [slotIndex] (0-31).
   ///
   /// Used by FreqPlanService for served-agency frequency plans.
@@ -533,6 +556,22 @@ class RadioService extends ChangeNotifier {
     } catch (e) {
       debugPrint('OpenHT: setVfoMode failed: $e');
     }
+  }
+
+  // TODO: VR-N76 PTT command opcode not yet identified in the Benshi protocol.
+  // SCO audio routing works; the PTT button is visually functional but does
+  // not key the radio transmitter until the opcode is found and implemented.
+
+  /// Key up the transmitter (PTT on). Currently a no-op stub.
+  Future<bool> startTransmit() async {
+    debugPrint('OpenHT PTT: WARNING — startTransmit() not yet implemented (no opcode)');
+    return false;
+  }
+
+  /// Release the transmitter (PTT off). Currently a no-op stub.
+  Future<bool> stopTransmit() async {
+    debugPrint('OpenHT PTT: WARNING — stopTransmit() not yet implemented (no opcode)');
+    return false;
   }
 
   Future<void> forceVfoMode() async {

@@ -1,11 +1,12 @@
 // lib/screens/dashboard/dashboard_screen.dart
-// Main radio control dashboard — frequency, mode, squelch, volume, CH/VFO
+// Main radio control dashboard — frequency, mode, squelch, volume, CH/VFO, PTT
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_benlink/flutter_benlink.dart';
 import '../../bluetooth/radio_service.dart';
+import '../../services/audio_service.dart';
 import '../../services/gps_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -109,6 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final radio = context.watch<RadioService>();
+    final audio = context.watch<AudioService>();
     final gps   = context.watch<GpsService>();
 
     return Scaffold(
@@ -132,6 +134,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: radio.isConnected
           ? _ConnectedView(
               radio: radio,
+              audio: audio,
               gps: gps,
               stepKhz: _stepKhz,
               isChannelMode: _isChannelMode,
@@ -160,6 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class _ConnectedView extends StatelessWidget {
   final RadioService radio;
+  final AudioService audio;
   final GpsService gps;
   final double stepKhz;
   final bool isChannelMode;
@@ -178,6 +182,7 @@ class _ConnectedView extends StatelessWidget {
 
   const _ConnectedView({
     required this.radio,
+    required this.audio,
     required this.gps,
     required this.stepKhz,
     required this.isChannelMode,
@@ -205,6 +210,7 @@ class _ConnectedView extends StatelessWidget {
           // ── Frequency / Channel Display ─────────────────────────────────
           _FrequencyCard(
             radio: radio,
+            audio: audio,
             isChannelMode: isChannelMode,
             channels: channels,
             channelIndex: channelIndex,
@@ -272,7 +278,7 @@ class _ConnectedView extends StatelessWidget {
                 style: TextStyle(color: Colors.white54, fontSize: 12)),
           ),
           const SizedBox(height: 8),
-          _QuickActions(onNavigate: onNavigate),
+          _QuickActions(radio: radio, audio: audio, onNavigate: onNavigate),
         ],
       ),
     );
@@ -290,6 +296,7 @@ class _ConnectedView extends StatelessWidget {
 
 class _FrequencyCard extends StatelessWidget {
   final RadioService radio;
+  final AudioService audio;
   final bool isChannelMode;
   final List<Channel> channels;
   final int channelIndex;
@@ -306,6 +313,7 @@ class _FrequencyCard extends StatelessWidget {
 
   const _FrequencyCard({
     required this.radio,
+    required this.audio,
     required this.isChannelMode,
     required this.channels,
     required this.channelIndex,
@@ -346,11 +354,19 @@ class _FrequencyCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Channel name / VFO label
-          Text(
-            isChannelMode ? _channelLabel() : (radio.currentChannelName ?? 'VFO'),
-            style: const TextStyle(color: Colors.green, fontSize: 12, letterSpacing: 1.5),
-            overflow: TextOverflow.ellipsis,
+          // Channel name / VFO label row with SCO audio icon
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  isChannelMode ? _channelLabel() : (radio.currentChannelName ?? 'VFO'),
+                  style: const TextStyle(
+                      color: Colors.green, fontSize: 12, letterSpacing: 1.5),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              _ScoStatusIcon(audio: audio),
+            ],
           ),
           const SizedBox(height: 6),
 
@@ -417,6 +433,30 @@ class _FrequencyCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── SCO Audio Status Icon ────────────────────────────────────────────────────
+
+class _ScoStatusIcon extends StatelessWidget {
+  final AudioService audio;
+  const _ScoStatusIcon({required this.audio});
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color) = switch (audio.scoState) {
+      ScoState.off        => (Icons.volume_off,     Colors.grey),
+      ScoState.connecting => (Icons.volume_up,       Colors.orange),
+      ScoState.connected  => (Icons.volume_up,       Colors.green),
+      ScoState.error      => (Icons.error_outline,   Colors.red),
+    };
+    return GestureDetector(
+      onTap: () => audio.toggleAudio(),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Icon(icon, color: color, size: 20),
       ),
     );
   }
@@ -736,38 +776,50 @@ class _StatusTile extends StatelessWidget {
 // ─── Quick Actions ─────────────────────────────────────────────────────────────
 
 class _QuickActions extends StatelessWidget {
+  final RadioService radio;
+  final AudioService audio;
   final ValueChanged<int>? onNavigate;
 
-  const _QuickActions({this.onNavigate});
+  const _QuickActions({
+    required this.radio,
+    required this.audio,
+    this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 1.3,
+    return Column(
       children: [
-        _ActionButton(
-          icon: Icons.cell_tower,
-          label: 'Near\nRepeaters',
-          color: Colors.blue,
-          onTap: () => onNavigate?.call(1),
+        GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 1.3,
+          children: [
+            _ActionButton(
+              icon: Icons.cell_tower,
+              label: 'Near\nRepeaters',
+              color: Colors.blue,
+              onTap: () => onNavigate?.call(1),
+            ),
+            _ActionButton(
+              icon: Icons.map,
+              label: 'APRS\nMap',
+              color: Colors.green,
+              onTap: () => onNavigate?.call(2),
+            ),
+            _ActionButton(
+              icon: Icons.settings,
+              label: 'Radio\nSettings',
+              color: Colors.orange,
+              onTap: () => onNavigate?.call(5),
+            ),
+          ],
         ),
-        _ActionButton(
-          icon: Icons.map,
-          label: 'APRS\nMap',
-          color: Colors.green,
-          onTap: () => onNavigate?.call(2),
-        ),
-        _ActionButton(
-          icon: Icons.settings,
-          label: 'Radio\nSettings',
-          color: Colors.orange,
-          onTap: () => onNavigate?.call(5),
-        ),
+        const SizedBox(height: 8),
+        _PttButton(audio: audio, radio: radio),
       ],
     );
   }
@@ -805,6 +857,100 @@ class _ActionButton extends StatelessWidget {
               label,
               textAlign: TextAlign.center,
               style: TextStyle(color: color, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── PTT Button ───────────────────────────────────────────────────────────────
+
+class _PttButton extends StatefulWidget {
+  final AudioService audio;
+  final RadioService radio;
+
+  const _PttButton({required this.audio, required this.radio});
+
+  @override
+  State<_PttButton> createState() => _PttButtonState();
+}
+
+class _PttButtonState extends State<_PttButton> {
+  bool _pressing = false;
+
+  Future<void> _onPressStart() async {
+    setState(() => _pressing = true);
+    await widget.audio.startPtt();
+    await widget.radio.startTransmit();
+  }
+
+  Future<void> _onPressEnd() async {
+    await widget.radio.stopTransmit();
+    await widget.audio.stopPtt();
+    if (mounted) setState(() => _pressing = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canTransmit = widget.radio.isConnected;
+
+    return GestureDetector(
+      onLongPressStart: canTransmit ? (_) => _onPressStart() : null,
+      onLongPressEnd:   canTransmit ? (_) => _onPressEnd()   : null,
+      onLongPressCancel: () => _onPressEnd(),
+      onTap: canTransmit
+          ? () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Hold to transmit'),
+                  duration: Duration(seconds: 1),
+                ))
+          : null,
+      child: Container(
+        width: double.infinity,
+        height: 52,
+        decoration: BoxDecoration(
+          color: _pressing
+              ? Colors.red[700]
+              : canTransmit
+                  ? Colors.red[900]
+                  : Colors.grey[850],
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _pressing
+                ? Colors.red[300]!
+                : canTransmit
+                    ? Colors.red[700]!
+                    : Colors.grey[700]!,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.mic,
+              color: _pressing
+                  ? Colors.white
+                  : canTransmit
+                      ? Colors.red[300]
+                      : Colors.grey[600],
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _pressing ? 'TRANSMITTING' : 'PTT',
+              style: TextStyle(
+                color: _pressing
+                    ? Colors.white
+                    : canTransmit
+                        ? Colors.red[300]
+                        : Colors.grey[600],
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
             ),
           ],
         ),
