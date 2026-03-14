@@ -1,0 +1,14 @@
+{
+  "id": "novars_hancock_county_ohio",
+  "name": "NOVARS - Hancock County, Ohio",
+  "fips": "039063",
+  "channels": [
+    {"slot": 0, "name": "SKYWARN", "rxMhz": 147.150, "txMhz": 147.750, "tone": 88.5, "notes": "W8FT 2M - Net Wednesday 2000"},
+    {"slot": 1, "name": "NOVARSASL", "rxMhz": 432.200, "txMhz": 432.200, "tsql": 67.0, "notes": "NOVARS Bridge Simplex Node - ARES Net Sunday 1930"},
+    {"slot": 2, "name": "N0VRS-7", "rxMhz": 145.01, "txMhz": 145.01, "tone": 0.0, "notes": "NOVARS BBS, Chat, and Winlink"},
+    {"slot": 3, "name": "2MSIMPLEX", "rxMhz": 146.520, "txMhz": 146.520, "tone": 0.0, "notes": "National 2m calling"},
+    {"slot": 4, "name": "70SIMPLEX", "rxMhz": 446.000, "txMhz": 446.000, "tone": 0.0, "notes": "National 70cm calling"},
+    {"slot": 5, "name": "ARESSMPLX", "rxMhz": 147.510, "txMhz": 147.510, "tone": 0.0, "notes": "SKYWARN/ARES Simplex Frequency"},
+    {"slot": 6, "name": "NOAA WX", "rxMhz": 162.525, "txMhz": 162.525, "tone": 0.0, "notes": "KZZ47 — nearest NWR"}
+  ]
+}
