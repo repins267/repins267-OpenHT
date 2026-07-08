@@ -426,8 +426,8 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
                     final allSources = aprs.sourcesFor(station.fullCallsign);
                     return Marker(
                       point: LatLng(station.latitude!, station.longitude!),
-                      width: isSelected ? 48 : 32,
-                      height: isSelected ? 48 : 32,
+                      width: isSelected ? 34 : 22,
+                      height: isSelected ? 34 : 22,
                       child: GestureDetector(
                         onTap: () => setState(() {
                           _selectedStation = station;
@@ -516,8 +516,12 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _AprsStatsChip(
-                  filtered: _filteredStations(aprs, mapSettings).length,
-                  total: aprs.stations.length,
+                  // "mapped / heard" — mapped counts only stations with a
+                  // position; heard is everything that passed the filters.
+                  filtered: _filteredStations(aprs, mapSettings)
+                      .where((s) => s.hasPosition)
+                      .length,
+                  total: _filteredStations(aprs, mapSettings).length,
                 ),
                 if (_showSpotters && spotter.spotters.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -870,7 +874,7 @@ class _AprsStatsChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        filtered == total ? '$filtered stations' : '$filtered / $total stations',
+        filtered == total ? '$filtered stations' : '$filtered mapped / $total heard',
         style: const TextStyle(color: Colors.white70, fontSize: 11),
       ),
     );
@@ -1007,7 +1011,7 @@ class _AprsStationMarker extends StatelessWidget {
       child: Center(
         child: Text(
           _emojiForSymbol(station.symbol),
-          style: TextStyle(fontSize: selected ? 18 : 12),
+          style: TextStyle(fontSize: selected ? 14 : 10),
         ),
       ),
     );

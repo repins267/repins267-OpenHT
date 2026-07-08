@@ -38,6 +38,36 @@ class AprsPacket {
     this.digiPath,
   });
 
+  /// Returns a copy of this packet with selected fields overridden.
+  /// Used to carry a station's last-known position forward onto later
+  /// position-less packets (status, messages, telemetry, WX) so the station
+  /// stays plotted on the map instead of dropping off.
+  AprsPacket copyWith({
+    double? latitude,
+    double? longitude,
+    String? symbol,
+    String? symbolTable,
+    String? comment,
+  }) {
+    return AprsPacket(
+      callsign: callsign,
+      ssid: ssid,
+      raw: raw,
+      comment: comment ?? this.comment,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      altitudeFeet: altitudeFeet,
+      speedKnots: speedKnots,
+      courseDegrees: courseDegrees,
+      symbol: symbol ?? this.symbol,
+      symbolTable: symbolTable ?? this.symbolTable,
+      type: type,
+      receivedAt: receivedAt,
+      source: source,
+      digiPath: digiPath,
+    );
+  }
+
   /// Number of digipeater hops (RF only; 0 = heard direct).
   int get rfHops {
     if (source != AprsSource.rf || digiPath == null) return 0;

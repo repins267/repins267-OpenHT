@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../bluetooth/radio_service.dart';
-import '../../services/freq_plan_service.dart';
+import 'freq_plans_screen.dart';
 import '../../services/noaa_service.dart';
 import 'tracks_screen.dart';
 import 'aprs_settings_screen.dart';
@@ -15,6 +15,7 @@ import 'channel_manager_screen.dart';
 import 'js8call_settings_screen.dart';
 import 'map_cache_settings_screen.dart';
 import 'radio_debug_screen.dart';
+import 'spotter_network_settings_screen.dart';
 
 // Known Benshi-protocol radio name prefixes and Vero OUI
 bool _isLikelyRadio(device) {
@@ -42,11 +43,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _callsign = '';
   String _sameCode = '';
 
-  // Frequency Plans
-  FreqPlan? _freqPlan;
-  bool _planWriting = false;
-  int  _planWritten = 0;
-
   // Weather Monitoring
   bool _weatherAlertsEnabled = false;
   bool _nwrMonitorEnabled    = false;
@@ -61,12 +57,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadPrefs();
-    _loadFreqPlan();
-  }
-
-  Future<void> _loadFreqPlan() async {
-    final plan = await FreqPlanService.loadPlan('ppraa_el_paso');
-    if (mounted) setState(() => _freqPlan = plan);
   }
 
   Future<void> _loadPrefs() async {
@@ -256,6 +246,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: radio.isConnected ? _setNwrMonitorEnabled : null,
           ),
 
+          // ─── Spotter Network ──────────────────────────
+          _SectionHeader('Spotter Network'),
+          ListTile(
+            leading: const Icon(Icons.storm_outlined, color: Colors.orange),
+            title: const Text('Spotter Network',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text(
+              'Sign in, location reporting, map display, nearby alerts',
+              style: TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const SpotterNetworkSettingsScreen()),
+            ),
+          ),
+
           // ─── APRS ─────────────────────────────────────
           _SectionHeader('APRS'),
           SwitchListTile(
@@ -323,67 +331,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ─── Frequency Plans ─────────────────────────
           _SectionHeader('Frequency Plans'),
-          if (_freqPlan == null)
-            const ListTile(
-              leading: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              title: Text('Loading plans…',
-                  style: TextStyle(color: Colors.white54, fontSize: 13)),
-            )
-          else
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              color: Colors.grey[850],
-              child: ListTile(
-                leading: const Icon(Icons.folder_open_outlined,
-                    color: Colors.teal),
-                title: Text(_freqPlan!.name,
-                    style: const TextStyle(color: Colors.white)),
-                subtitle: Text(
-                  '${_freqPlan!.channels.length} channels · FIPS ${_freqPlan!.fips}\n'
-                  'Writes PPARES · SKYWARN · RACES channels to Group 3 slots 0–7',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-                isThreeLine: true,
-                trailing: _planWriting
-                    ? SizedBox(
-                        width: 64,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$_planWritten/${_freqPlan!.channels.length}',
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 10),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              radio.isConnected ? Colors.teal[700] : null,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          minimumSize: Size.zero,
-                        ),
-                        onPressed:
-                            radio.isConnected ? _writePlanToGroup3 : null,
-                        child: const Text('Write\nGroup 3',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11)),
-                      ),
-              ),
+          ListTile(
+            leading: const Icon(Icons.folder_special_outlined, color: Colors.teal),
+            title: const Text('Frequency Plans',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text(
+                'Create, edit & write area frequency plans to any group',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FreqPlansScreen()),
             ),
+          ),
 
           // ─── Channels & Radio ─────────────────────────
           _SectionHeader('Channels & Radio'),
@@ -479,35 +438,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isScanning = true);
     await radio.scanPairedDevices();
     setState(() => _isScanning = false);
-  }
-
-  Future<void> _writePlanToGroup3() async {
-    if (_freqPlan == null) return;
-    final radio     = context.read<RadioService>();
-    final messenger = ScaffoldMessenger.of(context);
-    if (!radio.isConnected) return;
-
-    final total = _freqPlan!.channels.length;
-    setState(() {
-      _planWriting = true;
-      _planWritten = 0;
-    });
-
-    // Group 3 = groupIndex 2 (0-indexed)
-    final stream = FreqPlanService.writePlanToRadio(_freqPlan!, 2, radio);
-    await for (final written in stream) {
-      if (!mounted) break;
-      setState(() => _planWritten = written);
-    }
-
-    if (!mounted) return;
-    setState(() => _planWriting = false);
-    messenger.showSnackBar(SnackBar(
-      content: Text('Wrote $_planWritten/$total channels to Group 3'),
-      backgroundColor:
-          _planWritten == total ? Colors.green[700] : Colors.orange[700],
-      duration: const Duration(seconds: 3),
-    ));
   }
 
   Future<void> _setWeatherAlertsEnabled(bool v) async {

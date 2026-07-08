@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_benlink/flutter_benlink.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../models/repeater.dart';
 
 enum RadioConnectionState {
   disconnected,
@@ -45,12 +44,48 @@ class RadioService extends ChangeNotifier {
 
   int _nearRepeaterSlot = 0;
 
-  // Raw byte callbacks for debug terminal
+  // --- Auto-reconnect state ---
+  BluetoothDevice? _connectedDevice;   // last device we connected to
+  bool _userDisconnected = false;      // true only after an explicit disconnect()
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 8;
+  bool get isReconnecting => _reconnectTimer?.isActive ?? false;
+
+  // Raw byte callbacks for debug terminal (optional external hook)
   void Function(Uint8List)? onRawBytesSent;
   void Function(Uint8List)? onRawBytesReceived;
 
+  // Persistent debug log — survives navigation (capped at 500 entries)
+  final List<(String, String)> debugLog = [];
+
+  void addDebugBytes(String direction, Uint8List bytes) {
+    final hex = bytes
+        .map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase())
+        .join(' ');
+    final ts = DateTime.now().toString().split(' ').last.substring(0, 8);
+    debugLog.add((direction, '[$ts] $direction: $hex'));
+    if (debugLog.length > 500) debugLog.removeAt(0);
+    notifyListeners();
+  }
+
+  void addDebugText(String message) {
+    debugLog.add(('INFO', message));
+    if (debugLog.length > 500) debugLog.removeAt(0);
+    notifyListeners();
+  }
+
+  void clearDebugLog() {
+    debugLog.clear();
+    notifyListeners();
+  }
+
   RadioConnectionState get connectionState => _connectionState;
-  bool get isConnected => _connectionState == RadioConnectionState.connected;
+  // Reflect the REAL socket, not just a cached state flag — a link that dropped
+  // without a clean disconnect must read as not-connected.
+  bool get isConnected =>
+      _connectionState == RadioConnectionState.connected &&
+      (_controller?.isConnected ?? false);
   RadioController? get controller => _controller;
   String? get errorMessage => _errorMessage;
   List<BluetoothDevice> get pairedDevices => _pairedDevices;
@@ -134,15 +169,25 @@ class RadioService extends ChangeNotifier {
   }
 
   Future<bool> connect(BluetoothDevice device) async {
+    _userDisconnected = false;
+    _connectedDevice = device;
+    _reconnectTimer?.cancel();
     _connectionState = RadioConnectionState.connecting;
     _errorMessage = null;
     notifyListeners();
 
     try {
       _controller = RadioController(device: device);
+      _controller!.onDisconnected = _onLinkDown;
 
-      _controller!.onBytesSent = (b) => onRawBytesSent?.call(b);
-      _controller!.onBytesReceived = (b) => onRawBytesReceived?.call(b);
+      _controller!.onBytesSent = (b) {
+        onRawBytesSent?.call(b);
+        addDebugBytes('TX', b);
+      };
+      _controller!.onBytesReceived = (b) {
+        onRawBytesReceived?.call(b);
+        addDebugBytes('RX', b);
+      };
 
       await _controller!.connect().timeout(const Duration(seconds: 15));
 
@@ -162,8 +207,9 @@ class RadioService extends ChangeNotifier {
         throw RadioException('Radio sync timeout');
       }
 
+      _controller?.addListener(_onRadioStateChanged); // register before notify
+      _reconnectAttempts = 0; // clean sync → reset backoff
       _connectionState = RadioConnectionState.connected;
-      _controller?.addListener(_onRadioStateChanged);
       notifyListeners();
 
       return true;
@@ -177,6 +223,39 @@ class RadioService extends ChangeNotifier {
   }
 
   void _onRadioStateChanged() {
+    notifyListeners();
+  }
+
+  /// The command link dropped (RadioController.onDisconnected). Tear down the
+  /// dead controller and start a backoff reconnect (unless the user disconnected).
+  void _onLinkDown() {
+    if (_userDisconnected) return;
+    _controller?.removeListener(_onRadioStateChanged);
+    _controller?.dispose();
+    _controller = null;
+    _connectionState = RadioConnectionState.connecting; // = reconnecting
+    _errorMessage = 'Link dropped — reconnecting…';
+    notifyListeners();
+    _scheduleReconnect();
+  }
+
+  void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    if (_userDisconnected || _connectedDevice == null) return;
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      _connectionState = RadioConnectionState.error;
+      _errorMessage = 'Reconnect failed after $_maxReconnectAttempts attempts';
+      notifyListeners();
+      return;
+    }
+    // Exponential backoff, capped at 30s: 2,4,8,16,30,30…
+    final secs = (1 << (_reconnectAttempts + 1)).clamp(2, 30);
+    _reconnectTimer = Timer(Duration(seconds: secs), () async {
+      if (_userDisconnected || _connectedDevice == null) return;
+      _reconnectAttempts++;
+      final ok = await connect(_connectedDevice!);
+      if (!ok && !_userDisconnected) _scheduleReconnect();
+    });
     notifyListeners();
   }
 
@@ -289,10 +368,9 @@ class RadioService extends ChangeNotifier {
     _assertSynced();
     try {
       final slotIndex = _nearRepeaterSlot % 32;
-      final channelId = 5 * 32 + slotIndex; // UI Group 6 (0-indexed group 5, channels 160-191)
       final vfoChannel = await _controller!.getVfoChannel();
       final ch = vfoChannel.copyWith(
-        channelId: channelId,
+        channelId: slotIndex, // slot within region; region carried by WRITE_REGION_CH
         rxFreq: outputFreqMhz,
         txFreq: inputFreqMhz,
         rxSubAudio: ctcssHz,
@@ -302,7 +380,7 @@ class RadioService extends ChangeNotifier {
         bandwidth: BandwidthType.WIDE,
         name: name.length > 10 ? name.substring(0, 10) : name,
       );
-      await _controller!.writeChannel(ch);
+      await _controller!.writeRegionChannel(5, ch); // UI Group 6 = region 5
       _nearRepeaterSlot++;
       debugPrint('OpenHT: writeNearRepeaterChannel slot $slotIndex → ${outputFreqMhz}MHz');
       return true;
@@ -349,9 +427,10 @@ class RadioService extends ChangeNotifier {
   }) async {
     _assertSynced();
     try {
-      final channelId = groupIndex * 32 + slotIndex;
+      // Region-addressed write: channelId is the 0..31 slot WITHIN the region;
+      // the region (groupIndex) is carried by WRITE_REGION_CH, not baked into the id.
       final ch = Channel(
-        channelId:    channelId,
+        channelId:    slotIndex,
         txMod:        ModulationType.FM,
         rxMod:        ModulationType.FM,
         txFreq:       txFreqMhz,
@@ -364,7 +443,7 @@ class RadioService extends ChangeNotifier {
         txAtMedPower: true,
         name:         name.length > 10 ? name.substring(0, 10) : name,
       );
-      await _controller!.writeChannel(ch);
+      await _controller!.writeRegionChannel(groupIndex, ch);
       debugPrint('OpenHT: writeRegionChannel G${groupIndex + 1}:$slotIndex → ${rxFreqMhz}MHz');
       return true;
     } catch (e) {
@@ -374,31 +453,176 @@ class RadioService extends ChangeNotifier {
     }
   }
 
-  /// Write NOAA weather channels into Group 4.
+  /// Read the on-device name of channel group [groupIndex] (0-5). Null if none.
+  /// Does NOT change the active region (READ_REGION_NAME reads any region).
+  Future<String?> getGroupName(int groupIndex) async {
+    _assertSynced();
+    return await _controller!.readRegionName(groupIndex);
+  }
+
+  /// Read all 6 channel-group names (index = groupIndex 0-5). Cheap; no region switch.
+  Future<List<String?>> getGroupNames() async {
+    _assertSynced();
+    final names = <String?>[];
+    for (int i = 0; i < 6; i++) {
+      names.add(await _controller!.readRegionName(i));
+      await Future.delayed(const Duration(milliseconds: 30));
+    }
+    return names;
+  }
+
+  /// A "blank"/empty channel matching the vendor's empty-slot encoding (zero
+  /// freqs, no tone, empty name, flags 0x54 0x00) — used to clear a region slot.
+  Channel _blankChannel(int slot) => Channel(
+        channelId: slot,
+        txMod: ModulationType.FM,
+        rxMod: ModulationType.FM,
+        txFreq: 0,
+        rxFreq: 0,
+        txSubAudio: 0,
+        rxSubAudio: 0,
+        bandwidth: BandwidthType.WIDE,
+        scan: false,
+        txAtMaxPower: true,
+        txAtMedPower: false,
+        sign: true,
+        talkAround: false,
+        preDeEmphBypass: false,
+        txDisable: false,
+        mute: false,
+        name: '',
+      );
+
+  /// Blank every slot 0..31 of [region] EXCEPT those in [keep] — i.e. clear the
+  /// leftovers after a themed write so the group holds only the new channels.
+  Future<void> clearRegionSlotsExcept(int region, Set<int> keep) async {
+    _assertSynced();
+    for (int i = 0; i < 32; i++) {
+      if (keep.contains(i)) continue;
+      try {
+        await _controller!.writeRegionChannel(region, _blankChannel(i));
+      } catch (e) {
+        debugPrint('OpenHT: clear region $region slot $i failed: $e');
+      }
+      await Future.delayed(const Duration(milliseconds: 120));
+    }
+  }
+
+  /// Set the on-device name of a channel group [groupIndex] (0-5 = UI Groups 1-6).
+  /// Device stores 10 chars; longer names are truncated.
+  Future<bool> setGroupName(int groupIndex, String name) async {
+    _assertSynced();
+    try {
+      await _controller!.writeRegionName(groupIndex, name);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Group name write failed: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Read all channels of the radio's currently ACTIVE region (group). The radio
+  /// only serves the active region over BT (READ_RF_CH 0..channelCount-1); other
+  /// groups are reachable for writes via [writeChannelToGroup] but not live reads.
+  Future<List<Channel>> getActiveGroupChannels() async {
+    _assertSynced();
+    return await _controller!.getAllChannels();
+  }
+
+  /// Read a single channel [slot] (0..31) of the active region.
+  Future<Channel> getActiveChannel(int slot) async {
+    _assertSynced();
+    return await _controller!.getChannel(slot);
+  }
+
+  /// Switch the radio's active region (channel group) to [groupIndex] (0-5).
+  Future<void> setActiveRegion(int groupIndex) async {
+    _assertSynced();
+    await _controller!.setRegion(groupIndex);
+    notifyListeners();
+  }
+
+  /// Switch to [groupIndex] (0-5) and read all its channels. NOTE: SET_REGION
+  /// changes the radio's active region, so this leaves the radio on [groupIndex].
+  Future<List<Channel>> readGroupChannels(int groupIndex) async {
+    _assertSynced();
+    await _controller!.setRegion(groupIndex);
+    await Future.delayed(const Duration(milliseconds: 150));
+    return await _controller!.getAllChannels();
+  }
+
+  /// Write [channel] to the radio's ACTIVE region via WRITE_RF_CH (channelId =
+  /// slot 0..31). Use this when editing the active group — we can't know the
+  /// active region's numeric index, and WRITE_RF_CH targets it implicitly.
+  Future<bool> writeActiveChannel(Channel channel) async {
+    _assertSynced();
+    try {
+      await _controller!.writeChannel(channel);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Channel write failed: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Write [channel] (its channelId = slot 0..31) into [groupIndex] (0-5 = UI
+  /// Groups 1-6) via region addressing — works for any group, not just active.
+  Future<bool> writeChannelToGroup(int groupIndex, Channel channel) async {
+    _assertSynced();
+    try {
+      await _controller!.writeRegionChannel(groupIndex, channel);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Channel write failed: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Write NOAA weather channels into Group 5 (0-indexed group 4, slots 128–134).
   Future<int> writeNoaaGroup() async {
     _assertSynced();
+    // Must be in channel mode for WRITE_RF_CH to accept absolute channel IDs.
+    final prevVfoX = await beginBulkWrite();
     int written = 0;
-    final vfoChannel = await _controller!.getVfoChannel();
-    for (int i = 0; i < kNoaaChannels.length; i++) {
-      final (name, freqMhz) = kNoaaChannels[i];
-      try {
-        final ch = vfoChannel.copyWith(
-          channelId: 4 * 32 + i,
-          rxFreq: freqMhz,
-          txFreq: freqMhz,
-          rxSubAudio: 0,   // 0 = no tone (null falls through copyWith to old value)
-          txSubAudio: 0,
-          txMod: ModulationType.FM,
-          rxMod: ModulationType.FM,
-          bandwidth: BandwidthType.WIDE,
-          name: name,
-        );
-        await _controller!.writeChannel(ch);
-        written++;
-        await Future.delayed(const Duration(milliseconds: 150));
-      } catch (e) {
-        debugPrint('OpenHT: writeNoaaGroup slot $i failed: $e');
+    try {
+      final vfoChannel = await _controller!.getVfoChannel();
+      for (int i = 0; i < kNoaaChannels.length; i++) {
+        final (name, freqMhz) = kNoaaChannels[i];
+        try {
+          final ch = vfoChannel.copyWith(
+            channelId: i,  // slot within region; Group 5 = region 4
+            rxFreq: freqMhz,
+            txFreq: freqMhz,
+            rxSubAudio: 0,
+            txSubAudio: 0,
+            txMod: ModulationType.FM,
+            rxMod: ModulationType.FM,
+            bandwidth: BandwidthType.WIDE,
+            name: name,
+          );
+          await _controller!.writeRegionChannel(4, ch);
+          written++;
+          await Future.delayed(const Duration(milliseconds: 150));
+        } catch (e) {
+          debugPrint('OpenHT: writeNoaaGroup slot $i failed: $e');
+        }
       }
+      // Clear leftover channels in the rest of the group.
+      await clearRegionSlotsExcept(4, {for (int i = 0; i < kNoaaChannels.length; i++) i});
+      // Also name the group so the radio shows "NOAA WX" for Group 5.
+      try {
+        await _controller!.writeRegionName(4, 'NOAA WX');
+      } catch (e) {
+        debugPrint('OpenHT: writeNoaaGroup name failed: $e');
+      }
+    } finally {
+      await endBulkWrite(prevVfoX);
     }
     return written;
   }
@@ -427,10 +651,9 @@ class RadioService extends ChangeNotifier {
     final toWrite = channels.take(32).toList();
     for (int i = 0; i < toWrite.length; i++) {
       final entry = toWrite[i];
-      final channelId = 5 * 32 + i; // Group 6 (0-indexed group 5), channels 160–191
       try {
         final ch = Channel(
-          channelId: channelId,
+          channelId: i, // slot within region; Group 6 = region 5
           txMod: ModulationType.FM,
           rxMod: ModulationType.FM,
           txFreq: entry.inputFreqMhz,
@@ -443,7 +666,7 @@ class RadioService extends ChangeNotifier {
           txAtMedPower: true,
           name: entry.name.length > 10 ? entry.name.substring(0, 10) : entry.name,
         );
-        await _controller!.writeChannel(ch);
+        await _controller!.writeRegionChannel(5, ch); // UI Group 6 = region 5
         written++;
         debugPrint('OpenHT: bulkWrite slot$i ${entry.outputFreqMhz}MHz OK');
       } catch (e) {
@@ -452,9 +675,18 @@ class RadioService extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 150));
     }
 
+    // Clear leftover channels in the rest of Group 6.
+    await clearRegionSlotsExcept(5, {for (int i = 0; i < toWrite.length; i++) i});
+    // Name the group so the radio shows "Near Rptr" for Group 6.
+    try {
+      await _controller!.writeRegionName(5, 'Near Rptr');
+    } catch (e) {
+      debugPrint('OpenHT: bulkWrite name failed: $e');
+    }
+
     // Restore VFO mode.
     if (wasInVfo) {
-      debugPrint('OpenHT: bulkWrite — restoring VFO mode (vfoX=${s!.vfoX})');
+      debugPrint('OpenHT: bulkWrite — restoring VFO mode (vfoX=${s.vfoX})');
       await _controller!.writeSettings(s.copyWith(vfoX: s.vfoX));
       await Future.delayed(const Duration(milliseconds: 200));
     }
@@ -558,20 +790,54 @@ class RadioService extends ChangeNotifier {
     }
   }
 
-  // TODO: VR-N76 PTT command opcode not yet identified in the Benshi protocol.
-  // SCO audio routing works; the PTT button is visually functional but does
-  // not key the radio transmitter until the opcode is found and implemented.
+  // ── Audio (RFCOMM ch4 SBC engine) ─────────────────────────────────────────
+  // Keying is implicit on the audio channel: the radio keys TX when AudioData
+  // frames arrive and unkeys on AudioEnd (PB5 is driven by the radio firmware).
 
-  /// Key up the transmitter (PTT on). Currently a no-op stub.
-  Future<bool> startTransmit() async {
-    debugPrint('OpenHT PTT: WARNING — startTransmit() not yet implemented (no opcode)');
-    return false;
+  bool get isAudioMonitoring => _controller?.isAudioMonitoring ?? false;
+  RadioAudioState get audioState =>
+      _controller?.audioState ?? RadioAudioState.off;
+
+  /// Decoded RX PCM (s16le, mono, 32 kHz) for DSP (SSTV / APT / LRPT).
+  Stream<Uint8List>? get audioPcmStream => _controller?.audioPcmStream;
+
+  Future<void> startAudioMonitor() async {
+    await _controller?.startAudioMonitor();
+    notifyListeners();
   }
 
-  /// Release the transmitter (PTT off). Currently a no-op stub.
+  Future<void> stopAudioMonitor() async {
+    await _controller?.stopAudioMonitor();
+    notifyListeners();
+  }
+
+  Future<void> toggleAudioMonitor() async {
+    await _controller?.toggleAudioMonitor();
+    notifyListeners();
+  }
+
+  /// Key up via the phone microphone (voice PTT). Opens the audio socket if needed.
+  Future<bool> startTransmit() async {
+    final ok = await _controller?.startTransmit() ?? false;
+    notifyListeners();
+    return ok;
+  }
+
+  /// Release voice PTT (sends AudioEnd to unkey).
   Future<bool> stopTransmit() async {
-    debugPrint('OpenHT PTT: WARNING — stopTransmit() not yet implemented (no opcode)');
-    return false;
+    final ok = await _controller?.stopTransmit() ?? false;
+    notifyListeners();
+    return ok;
+  }
+
+  /// Stream app-generated PCM (s16le, mono, 32 kHz) — SSTV tones / wx uplink.
+  /// Call [endTransmit] when the burst is finished to unkey.
+  Future<void> sendAudioPcm(Uint8List pcm) async {
+    await _controller?.sendAudioPcm(pcm);
+  }
+
+  Future<void> endTransmit() async {
+    await _controller?.endTransmit();
   }
 
   Future<void> forceVfoMode() async {
@@ -582,6 +848,10 @@ class RadioService extends ChangeNotifier {
   }
 
   void disconnect() {
+    _userDisconnected = true;
+    _reconnectTimer?.cancel();
+    _reconnectAttempts = 0;
+    _connectedDevice = null;
     _controller?.removeListener(_onRadioStateChanged);
     _controller?.dispose();
     _controller = null;

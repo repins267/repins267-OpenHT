@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../bluetooth/radio_service.dart';
 import '../../services/channel_csv_service.dart';
+import 'channel_list_screen.dart';
+import 'group_editor_screen.dart';
 
 class ChannelManagerScreen extends StatefulWidget {
   const ChannelManagerScreen({super.key});
@@ -33,17 +35,18 @@ class _ChannelManagerScreenState extends State<ChannelManagerScreen> {
     final radio = context.read<RadioService>();
     if (!radio.isConnected) return;
     setState(() => _isLoadingChannels = true);
-    final all = await radio.getAllChannels();
+    // Read the real on-device group names (cheap; no region switch). Per-group
+    // channels are read on demand when a group is opened (SET_REGION + read).
+    List<String?> names = List<String?>.filled(6, null);
+    try {
+      names = await radio.getGroupNames();
+    } catch (_) {}
     if (!mounted) return;
     final groups = <_GroupInfo>[];
     for (int g = 0; g < 6; g++) {
-      final start = g * 32;
-      final end = start + 32;
-      final chans = all.where((c) => c.channelId >= start && c.channelId < end).toList();
-      String label = 'Group ${g + 1}';
-      if (g == 4) label = 'Group 5 — NOAA Weather';
-      if (g == 5) label = 'Group 6 — Near Repeaters';
-      groups.add(_GroupInfo(index: g, label: label, channels: chans));
+      final nm = g < names.length ? names[g] : null;
+      final label = (nm != null && nm.isNotEmpty) ? 'Group ${g + 1} · $nm' : 'Group ${g + 1}';
+      groups.add(_GroupInfo(index: g, label: label, name: nm, channels: const []));
     }
     setState(() {
       _groups = groups;
@@ -134,15 +137,21 @@ class _ChannelManagerScreenState extends State<ChannelManagerScreen> {
 
     setState(() => _isSyncing = true);
     int written = 0;
-    for (int i = 0; i < channels.length && i < 32; i++) {
-      try {
-        final ch = channels[i].copyWith(channelId: groupIndex * 32 + i);
-        await radio.controller!.writeChannel(ch);
-        written++;
-        await Future.delayed(const Duration(milliseconds: 150));
-      } catch (e) {
-        debugPrint('Channel import slot $i failed: $e');
+    // Switch to channel mode before bulk writes so WRITE_RF_CH accepts absolute IDs.
+    final prevVfoX = await radio.beginBulkWrite();
+    try {
+      for (int i = 0; i < channels.length && i < 32; i++) {
+        try {
+          final ch = channels[i].copyWith(channelId: groupIndex * 32 + i);
+          await radio.controller!.writeChannel(ch);
+          written++;
+          await Future.delayed(const Duration(milliseconds: 150));
+        } catch (e) {
+          debugPrint('Channel import slot $i failed: $e');
+        }
       }
+    } finally {
+      await radio.endBulkWrite(prevVfoX);
     }
     if (!mounted) return;
     setState(() => _isSyncing = false);
@@ -218,6 +227,17 @@ class _ChannelManagerScreenState extends State<ChannelManagerScreen> {
                   children: [
                     _SectionHeader('Quick Actions'),
                     ListTile(
+                      leading: const Icon(Icons.list_alt, color: Colors.tealAccent),
+                      title: const Text('View & Edit Channels',
+                          style: TextStyle(color: Colors.white)),
+                      subtitle: const Text('Active group — tap a channel to edit all settings',
+                          style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ChannelListScreen()),
+                      ),
+                    ),
+                    ListTile(
                       leading: const Icon(Icons.wb_cloudy_outlined, color: Colors.blue),
                       title: const Text('Re-write NOAA Weather Channels',
                           style: TextStyle(color: Colors.white)),
@@ -244,6 +264,18 @@ class _ChannelManagerScreenState extends State<ChannelManagerScreen> {
                     ..._groups.map((g) => _GroupTile(
                           info: g,
                           onExport: () => _exportCsv(g.index),
+                          onEdit: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => GroupEditorScreen(
+                                  groupIndex: g.index,
+                                  groupName: g.name,
+                                ),
+                              ),
+                            );
+                            // Refresh names after possibly renaming in the editor.
+                            _loadFromRadio();
+                          },
                         )),
                     const SizedBox(height: 80),
                   ],
@@ -255,11 +287,13 @@ class _ChannelManagerScreenState extends State<ChannelManagerScreen> {
 class _GroupInfo {
   final int index;
   final String label;
+  final String? name;   // raw on-device region name (no "Group N ·" prefix)
   final List<Channel> channels;
 
   const _GroupInfo({
     required this.index,
     required this.label,
+    this.name,
     required this.channels,
   });
 }
@@ -267,8 +301,9 @@ class _GroupInfo {
 class _GroupTile extends StatelessWidget {
   final _GroupInfo info;
   final VoidCallback onExport;
+  final VoidCallback onEdit;
 
-  const _GroupTile({required this.info, required this.onExport});
+  const _GroupTile({required this.info, required this.onExport, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -285,14 +320,21 @@ class _GroupTile extends StatelessWidget {
           ),
         ),
         title: Text(info.label, style: const TextStyle(color: Colors.white)),
-        subtitle: Text(
-          '${info.channels.length} channel(s) loaded',
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
+        subtitle: const Text(
+          'Tap to rename group or program channels',
+          style: TextStyle(color: Colors.white54, fontSize: 12),
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.share_outlined, color: Colors.blue),
-          tooltip: 'Export as CSV (share)',
-          onPressed: info.channels.isEmpty ? null : onExport,
+        onTap: onEdit,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: Colors.blue),
+              tooltip: 'Export as CSV (share)',
+              onPressed: info.channels.isEmpty ? null : onExport,
+            ),
+            const Icon(Icons.chevron_right, color: Colors.white38),
+          ],
         ),
       ),
     );

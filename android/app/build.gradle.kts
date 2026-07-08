@@ -29,6 +29,21 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Native SBC codec (BlueZ libsbc) for the RFCOMM ch4 audio engine.
+        ndk {
+            // Pixel 10 Pro XL is arm64; drop armv7 (not needed, and its NEON
+            // build adds complexity). Add armeabi-v7a back here if 32-bit is wanted.
+            abiFilters += listOf("arm64-v8a")
+        }
+    }
+
+    // Builds libopenht_sbc.so from android/app/src/main/cpp.
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     buildTypes {

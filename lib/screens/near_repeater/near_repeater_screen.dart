@@ -1,14 +1,16 @@
 // lib/screens/near_repeater/near_repeater_screen.dart
 // Near Repeater — primary source: RepeaterBook app content provider (live, North America).
-// Fallback: bundled GPX assets (offline, Colorado 2m/70cm).
-// GPX data © RepeaterBook.com · Colorado 2m/70cm · Exported 2026-03-03
+// Fallbacks: cached provider data, then user-imported GPX/CSV exports.
+// No repeater data is bundled with the app (RepeaterBook policy: offline
+// bundling/redistribution requires written permission).
 
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:xml/xml.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../services/gps_service.dart';
 import '../../bluetooth/radio_service.dart';
 import '../../services/repeaterbook_connect_service.dart';
@@ -58,69 +60,6 @@ class _Repeater {
   bool get isFmCompatible => serviceText.toUpperCase().contains('FM');
 }
 
-// ─── GPX parsing ─────────────────────────────────────────────────────────────
-
-List<_Repeater> _parseGpx(String gpxXml, String band) {
-  final doc = XmlDocument.parse(gpxXml);
-  final repeaters = <_Repeater>[];
-
-  for (final wpt in doc.findAllElements('wpt')) {
-    final lat = double.tryParse(wpt.getAttribute('lat') ?? '') ?? 0.0;
-    final lon = double.tryParse(wpt.getAttribute('lon') ?? '') ?? 0.0;
-    if (lat == 0.0 && lon == 0.0) continue;
-
-    final nameEl = wpt.findElements('name').firstOrNull;
-    final descEl = wpt.findElements('desc').firstOrNull
-        ?? wpt.findElements('cmt').firstOrNull;
-
-    final nameText = nameEl?.innerText.trim() ?? '';
-    final descText = descEl?.innerText.trim() ?? '';
-
-    final parts = nameText.split(RegExp(r'\s+'));
-    if (parts.length < 2) continue;
-
-    final callsign   = parts[0];
-    final outputFreq = double.tryParse(parts[1]) ?? 0.0;
-    if (outputFreq == 0.0) continue;
-
-    String offsetDir = '';
-    if (parts.length > 2) {
-      final field = parts[2];
-      if (field.endsWith('+')) offsetDir = '+';
-      if (field.endsWith('-')) offsetDir = '-';
-    }
-
-    double? ctcss;
-    if (parts.length > 3) {
-      ctcss = double.tryParse(parts[3]);
-    }
-
-    final descNorm = descText.replaceAll(RegExp(r'\s+'), ' ').trim();
-    final isOpen = !descNorm.toUpperCase().contains('CLOSED');
-
-    String location = descNorm
-        .replaceAll(RegExp(r'\bOPEN\b', caseSensitive: false), '')
-        .replaceAll(RegExp(r'\bCLOSED\b', caseSensitive: false), '')
-        .replaceAll(callsign, '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    if (location.isEmpty) location = descNorm;
-
-    repeaters.add(_Repeater(
-      lat: lat,
-      lon: lon,
-      callsign: callsign,
-      outputFreq: outputFreq,
-      offsetDir: offsetDir,
-      ctcssHz: ctcss,
-      location: location,
-      isOpen: isOpen,
-      band: band,
-    ));
-  }
-  return repeaters;
-}
-
 // ─── Haversine distance (miles) ───────────────────────────────────────────────
 
 double _distanceMiles(double lat1, double lon1, double lat2, double lon2) {
@@ -145,6 +84,62 @@ double _computeInputFreq(_Repeater r) {
   return r.offsetDir == '+' ? r.outputFreq + offset : r.outputFreq - offset;
 }
 
+// ─── Export builders ──────────────────────────────────────────────────────────
+
+String _xmlEsc(String s) => s
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+
+String _csvEsc(String s) =>
+    (s.contains(',') || s.contains('"')) ? '"${s.replaceAll('"', '""')}"' : s;
+
+/// GPX in RepeaterBook-app <name> layout so OpenHT can re-import it later.
+/// Repeaters without coordinates (CSV-sourced) are skipped.
+String _buildGpx(List<_Repeater> list) {
+  final b = StringBuffer()
+    ..writeln('<?xml version="1.0" encoding="UTF-8" standalone="no" ?>')
+    ..writeln('<gpx version="1.1" creator="OpenHT" '
+        'xmlns="http://www.topografix.com/GPX/1/1">');
+  for (final r in list) {
+    if (r.lat == 0.0 && r.lon == 0.0) continue;
+    final tone = r.ctcssHz != null ? ' ${r.ctcssHz!.toStringAsFixed(1)}' : '';
+    final freq = r.outputFreq.toStringAsFixed(6);
+    final name = '${r.callsign} $freq $freq${r.offsetDir}$tone';
+    final desc = '${r.location} ${r.callsign} '
+        '${r.isOpen ? 'OPEN' : 'CLOSED'} ${r.serviceText}';
+    b
+      ..writeln('  <wpt lat="${r.lat}" lon="${r.lon}">')
+      ..writeln('    <name>${_xmlEsc(name)}</name>')
+      ..writeln('    <desc>${_xmlEsc(desc)}</desc>')
+      ..writeln('  </wpt>');
+  }
+  b.writeln('</gpx>');
+  return b.toString();
+}
+
+/// CSV in repeaterbook.com column order so it round-trips through import.
+String _buildCsv(List<_Repeater> list) {
+  final b = StringBuffer()
+    ..writeln('Output Freq,Input Freq,Offset,Uplink Tone,Downlink Tone,'
+        'Call,Location,Modes');
+  for (final r in list) {
+    final tone = r.ctcssHz != null ? r.ctcssHz!.toStringAsFixed(1) : '';
+    b.writeln([
+      r.outputFreq.toStringAsFixed(6),
+      _computeInputFreq(r).toStringAsFixed(6),
+      r.offsetDir,
+      tone,
+      tone,
+      _csvEsc(r.callsign),
+      _csvEsc(r.location),
+      _csvEsc(r.serviceText),
+    ].join(','));
+  }
+  return b.toString();
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class NearRepeaterScreen extends StatefulWidget {
@@ -154,7 +149,7 @@ class NearRepeaterScreen extends StatefulWidget {
   State<NearRepeaterScreen> createState() => _NearRepeaterScreenState();
 }
 
-enum _DataSource { repeaterBook, cachedLive, importedGpx, bundledGpx }
+enum _DataSource { repeaterBook, cachedLive, importedGpx, none }
 
 class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
   List<_Repeater> _all = [];
@@ -167,7 +162,7 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
   int? _tuningIndex;
   bool _isWritingGroup = false;
   final Set<_Repeater> _selectedRepeaters = {};
-  _DataSource _dataSource = _DataSource.bundledGpx;
+  _DataSource _dataSource = _DataSource.none;
 
   @override
   void initState() {
@@ -290,63 +285,89 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
       return;
     }
 
-    // ── Fallback 2: bundled Colorado GPX ─────────────────────────────────────
-    try {
-      final raw2m   = await rootBundle.loadString('assets/repeaters/colorado_2m.gpx');
-      final raw70cm = await rootBundle.loadString('assets/repeaters/colorado_70cm.gpx');
-
-      final all = [..._parseGpx(raw2m, '2m'), ..._parseGpx(raw70cm, '70cm')];
-
-      if (lat != null && lon != null) {
-        for (final r in all) {
-          r.distanceMiles = _distanceMiles(lat, lon, r.lat, r.lon);
-        }
-        all.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
-      }
-
-      if (mounted) {
-        setState(() {
-          _all = all;
-          _dataSource = _DataSource.bundledGpx;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
+    // ── No data available — show empty state prompting RB app / import ──────
+    if (mounted) {
+      setState(() {
+        _all = [];
+        _dataSource = _DataSource.none;
+        _isLoading = false;
+      });
     }
   }
 
-  Future<void> _importGpx() async {
+  Future<void> _import() async {
     final rbService = context.read<RepeaterBookService>();
+    // FileType.custom with a 'gpx'/'csv' allowlist is unreliable on Android
+    // (many document providers won't surface those extensions). Pick anything,
+    // then validate by name; withData:true covers content:// URIs with no path.
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['gpx'],
+      type: FileType.any,
       allowMultiple: true,
-      dialogTitle: 'Select RepeaterBook GPX export(s)',
+      withData: true,
+      dialogTitle: 'Select RepeaterBook GPX or CSV export(s)',
     );
     if (result == null || result.files.isEmpty) return;
 
     int totalAdded = 0;
+    int handled = 0;
     for (final file in result.files) {
-      final path = file.path;
-      if (path == null) continue;
-      final added = await rbService.importGpxFile(path);
-      totalAdded += added;
+      final name = file.name.toLowerCase();
+      // RepeaterBook's website CSV export downloads as "RB_<timestamp>.csv.xls";
+      // accept .xls and let importFile's content sniffing sort out the format.
+      if (!name.endsWith('.gpx') && !name.endsWith('.csv') && !name.endsWith('.xls')) {
+        continue;
+      }
+      try {
+        final added = await rbService.importFile(
+          file.path ?? file.name,
+          bytes: file.bytes,
+        );
+        totalAdded += added;
+        handled++;
+      } catch (e) {
+        debugPrint('NearRepeater: import failed for ${file.name}: $e');
+      }
     }
 
     if (!mounted) return;
+    final msg = handled == 0
+        ? 'No .gpx, .csv, or .xls files selected'
+        : totalAdded > 0
+            ? 'Imported $totalAdded new repeaters — reloading…'
+            : (rbService.error ?? 'No new repeaters found in file(s)');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(totalAdded > 0
-          ? 'Imported $totalAdded new repeaters — reloading…'
-          : 'No new repeaters found in file(s)'),
+      content: Text(msg),
       backgroundColor: totalAdded > 0 ? Colors.green[700] : Colors.orange[700],
     ));
     if (totalAdded > 0) _load();
+  }
+
+  Future<void> _exportList() async {
+    final gps   = context.read<GpsService>();
+    final radio = context.read<RadioService>();
+    final pos   = _bestGps(gps, radio);
+    final list  = _filtered(pos.hasPos ? pos.lat : null, pos.hasPos ? pos.lon : null);
+    if (list.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing to export')));
+      return;
+    }
+    try {
+      final dir = await getTemporaryDirectory();
+      final gpxFile = File('${dir.path}/openht_repeaters.gpx');
+      final csvFile = File('${dir.path}/openht_repeaters.csv');
+      await gpxFile.writeAsString(_buildGpx(list));
+      await csvFile.writeAsString(_buildCsv(list));
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(gpxFile.path), XFile(csvFile.path)],
+        text: 'OpenHT — ${list.length} repeaters',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: $e')));
+    }
   }
 
   Future<void> _clearImportedGpx() async {
@@ -524,7 +545,8 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
             icon: const Icon(Icons.more_vert),
             onSelected: (v) {
               if (v == 'deselect') setState(() => _selectedRepeaters.clear());
-              if (v == 'import')   _importGpx();
+              if (v == 'import')   _import();
+              if (v == 'export')   _exportList();
               if (v == 'clear')    _clearImportedGpx();
             },
             itemBuilder: (_) => [
@@ -541,8 +563,17 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
                 value: 'import',
                 child: ListTile(
                   leading: Icon(Icons.file_upload_outlined),
-                  title: Text('Import GPX…'),
-                  subtitle: Text('Load RepeaterBook .gpx export'),
+                  title: Text('Import GPX / CSV…'),
+                  subtitle: Text('Load a repeaterbook.com export'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'export',
+                child: ListTile(
+                  leading: Icon(Icons.ios_share),
+                  title: Text('Export list…'),
+                  subtitle: Text('Share current list as GPX + CSV'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -578,7 +609,10 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
                 : _error != null
                     ? _ErrorState(error: _error!, onRetry: _load)
                     : list.isEmpty
-                        ? const _EmptyState()
+                        ? _EmptyState(
+                            onImport: _import,
+                            noData: _dataSource == _DataSource.none,
+                          )
                         : ListView.builder(
                             itemCount: list.length + 1,
                             itemBuilder: (ctx, i) {
@@ -614,7 +648,7 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
       _DataSource.repeaterBook => 'Live data via RepeaterBook app · © RepeaterBook.com',
       _DataSource.cachedLive   => 'Cached RepeaterBook data${_ageLabel(RepeaterBookConnectService.cachedAt)} · © RepeaterBook.com · Open RB app to refresh',
       _DataSource.importedGpx  => '${_all.length} repeaters from ${rbService.importCount} GPX file(s) · © RepeaterBook.com',
-      _DataSource.bundledGpx   => 'Fallback: Colorado 2m/70cm · © RepeaterBook.com · Tap ⋮ to import your area',
+      _DataSource.none         => 'No repeater data · open the RepeaterBook app or tap ⋮ to import',
     };
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -969,19 +1003,38 @@ class _RepeaterCard extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  final VoidCallback onImport;
+  final bool noData;
+  const _EmptyState({required this.onImport, required this.noData});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.cell_tower, size: 64, color: Colors.white24),
-          SizedBox(height: 12),
-          Text('No repeaters match filters',
-              style: TextStyle(color: Colors.white54, fontSize: 16)),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cell_tower, size: 64, color: Colors.white24),
+            const SizedBox(height: 12),
+            Text(
+              noData
+                  ? 'No repeater data loaded.\n\nInstall the RepeaterBook app and '
+                    'load your area for live data (requires RepeaterBook Connect), '
+                    'or import a GPX/CSV export from repeaterbook.com.'
+                  : 'No repeaters match the current filters.\n\n'
+                    'Try widening the distance filter or turning off "FM only".',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: onImport,
+              icon: const Icon(Icons.file_upload_outlined),
+              label: const Text('Import GPX / CSV'),
+            ),
+          ],
+        ),
       ),
     );
   }

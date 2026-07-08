@@ -101,7 +101,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (_) => _FreqKeypadDialog(initialFreq: current),
     );
     if (result != null && result > 0) {
-      await radio.tuneToFrequency(result);
+      final ok = await radio.tuneToFrequency(result);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(radio.errorMessage ?? 'Tune failed'),
+          backgroundColor: Colors.red[700],
+          duration: const Duration(seconds: 3),
+        ));
+      }
     }
   }
 

@@ -34,12 +34,19 @@ import 'services/weather_alert_controller.dart';
 import 'services/repeaterbook_service.dart';
 import 'services/aprs_map_settings.dart';
 import 'services/repeaterbook_connect_service.dart';
+import 'services/nws_alert_service.dart';
+import 'services/spc_service.dart';
+import 'services/mping_service.dart';
+import 'services/lsr_service.dart';
+import 'services/spotter_network_service.dart';
+import 'screens/weather/weather_layer_drawer.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/near_repeater/near_repeater_screen.dart';
 import 'screens/aprs_map/aprs_map_screen.dart';
 import 'screens/weather/weather_screen.dart';
 import 'screens/messages/messages_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'widgets/radio_status_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,10 +84,17 @@ class OpenHtApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RadioService()),
-        ChangeNotifierProvider(create: (_) => AudioService()),
+        ChangeNotifierProxyProvider<RadioService, AudioService>(
+          create: (_) => AudioService(),
+          update: (_, radio, audio) => (audio ?? AudioService())..attach(radio),
+        ),
         ChangeNotifierProvider(create: (_) => GpsService()..startTracking()),
         ChangeNotifierProvider(create: (_) => AprsService()),
-        ChangeNotifierProvider(create: (_) => AprsIsService()),
+        ChangeNotifierProxyProvider<GpsService, AprsIsService>(
+          create: (_) => AprsIsService(),
+          update: (_, gps, aprsIs) => (aprsIs ?? AprsIsService())
+            ..updateGps(gps.latitude, gps.longitude),
+        ),
         ChangeNotifierProvider(create: (_) {
           final svc = IgateService();
           svc.init();
@@ -114,6 +128,16 @@ class OpenHtApp extends StatelessWidget {
           return svc;
         }),
         ChangeNotifierProvider(create: (_) => AprsMapSettings()),
+        ChangeNotifierProvider(create: (_) => NwsAlertService()),
+        ChangeNotifierProvider(create: (_) => SpcService()),
+        ChangeNotifierProvider(create: (_) => MpingService()),
+        ChangeNotifierProvider(create: (_) => LsrService()),
+        ChangeNotifierProvider(create: (_) {
+          final svc = SpotterNetworkService();
+          svc.init();
+          return svc;
+        }),
+        ChangeNotifierProvider(create: (_) => WeatherLayerState()),
         ChangeNotifierProxyProvider3<NoaaService, RadioService, GpsService,
             WeatherAlertController>(
           create: (_) => WeatherAlertController(),
@@ -218,7 +242,11 @@ class _OpenHtShellState extends State<OpenHtShell> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_selectedIndex != 0) const RadioStatusBar(),
+          NavigationBar(
         backgroundColor: Colors.grey[850],
         indicatorColor: Colors.blue[900],
         selectedIndex: _selectedIndex,
@@ -263,6 +291,8 @@ class _OpenHtShellState extends State<OpenHtShell> {
             selectedIcon: Icon(Icons.settings),
             label: 'Settings',
           ),
+        ],
+      ),
         ],
       ),
     );

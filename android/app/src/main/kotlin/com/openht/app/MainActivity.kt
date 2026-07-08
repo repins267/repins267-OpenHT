@@ -1,114 +1,112 @@
 package com.openht.app
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.media.AudioManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import com.openht.app.audio.RadioAudioEngine
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val audioChannel = "com.openht.app/audio"
-    private val rbChannel   = "com.openht.app/repeaterbook"
+    private val audioRxChannel = "com.openht.app/audio_rx"
+    private val rbChannel = "com.openht.app/repeaterbook"
 
-    // Saved reference so the SCO BroadcastReceiver can invoke Dart callbacks.
+    private val main = Handler(Looper.getMainLooper())
+
     private var audioMethodChannel: MethodChannel? = null
-    private var scoReceiver: BroadcastReceiver? = null
+    private var rxSink: EventChannel.EventSink? = null
+    private var audioEngine: RadioAudioEngine? = null
 
-    // ── SCO state BroadcastReceiver ───────────────────────────────────────────
-
-    private fun registerScoReceiver() {
-        scoReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1)
-                val stateStr = when (state) {
-                    AudioManager.SCO_AUDIO_STATE_CONNECTED    -> "connected"
-                    AudioManager.SCO_AUDIO_STATE_DISCONNECTED -> "disconnected"
-                    AudioManager.SCO_AUDIO_STATE_ERROR        -> "error"
-                    else -> return
-                }
-                // MethodChannel requires the main thread.
-                Handler(Looper.getMainLooper()).post {
-                    audioMethodChannel?.invokeMethod(
-                        "audioStateChanged",
-                        mapOf("state" to stateStr)
-                    )
-                }
-            }
-        }
-        @Suppress("DEPRECATION")
-        registerReceiver(
-            scoReceiver,
-            IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_CHANGED)
-        )
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        scoReceiver?.let { unregisterReceiver(it) }
-    }
+    // Diagnostics: rate-limited PCM-tap heartbeat (chunks forwarded to Dart +
+    // whether a Dart consumer is currently subscribed).
+    private var pcmTapCount = 0L
+    private var pcmTapLast = 0L
 
     // ── Flutter engine setup ──────────────────────────────────────────────────
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
 
-        // ── Audio SCO channel ─────────────────────────────────────────────────
-        val ch = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, audioChannel)
-        audioMethodChannel = ch   // Save ref for SCO receiver callback
+        // ── RX PCM tap (decoded s16le mono 32 kHz) → Dart DSP (SSTV/APT/LRPT) ──
+        EventChannel(messenger, audioRxChannel).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    rxSink = events
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    rxSink = null
+                }
+            }
+        )
+
+        // ── RFCOMM ch4 SBC audio engine ───────────────────────────────────────
+        val ch = MethodChannel(messenger, audioChannel)
+        audioMethodChannel = ch
+
+        val engine = RadioAudioEngine(
+            context = applicationContext,
+            onState = { state ->
+                main.post {
+                    audioMethodChannel?.invokeMethod("audioStateChanged", mapOf("state" to state))
+                }
+            },
+            onPcm = { pcm ->
+                main.post {
+                    val sink = rxSink
+                    sink?.success(pcm)
+                    pcmTapCount++
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (pcmTapLast == 0L) pcmTapLast = now
+                    if (now - pcmTapLast >= 2000L) {
+                        android.util.Log.i("OpenHtAudio",
+                            "PCM tap: %d chunks to Dart in %dms (dartListener=%b)"
+                                .format(pcmTapCount, now - pcmTapLast, sink != null))
+                        pcmTapCount = 0; pcmTapLast = now
+                    }
+                }
+            },
+        )
+        audioEngine = engine
 
         ch.setMethodCallHandler { call, result ->
-            val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
             when (call.method) {
-                "startAudio" -> {
-                    am.mode = AudioManager.MODE_IN_COMMUNICATION
-                    @Suppress("DEPRECATION")
-                    am.requestAudioFocus(
-                        null,
-                        AudioManager.STREAM_VOICE_CALL,
-                        AudioManager.AUDIOFOCUS_GAIN
-                    )
-                    @Suppress("DEPRECATION")
-                    am.startBluetoothSco()
-                    @Suppress("DEPRECATION")
-                    am.isBluetoothScoOn = true
-                    // Route to BT headset if A2DP is active, otherwise phone speaker
-                    if (am.isBluetoothA2dpOn) {
-                        am.isSpeakerphoneOn = false
+                // RX monitor: open/close the dedicated ch4 audio socket.
+                "openAudio" -> {
+                    val mac = call.argument<String>("mac")
+                    if (mac.isNullOrEmpty()) {
+                        result.error("NO_MAC", "openAudio requires 'mac'", null)
                     } else {
-                        am.isSpeakerphoneOn = true
+                        engine.open(mac); result.success(null)
                     }
-                    result.success(null)
                 }
-                "stopAudio" -> {
-                    @Suppress("DEPRECATION")
-                    am.stopBluetoothSco()
-                    @Suppress("DEPRECATION")
-                    am.isBluetoothScoOn = false
-                    am.isSpeakerphoneOn = false
-                    am.mode = AudioManager.MODE_NORMAL
-                    @Suppress("DEPRECATION")
-                    am.abandonAudioFocus(null)
-                    result.success(null)
+                "closeAudio" -> { engine.close(); result.success(null) }
+
+                // TX voice (mic) PTT.
+                "startPtt" -> { engine.startMicPtt(); result.success(null) }
+                "stopPtt" -> { engine.stopMicPtt(); result.success(null) }
+
+                // TX injected PCM (SSTV tones / wx uplink). 'endTx' unkeys.
+                "sendPcm" -> {
+                    val pcm = call.argument<ByteArray>("pcm")
+                    if (pcm == null) result.error("NO_PCM", "sendPcm requires 'pcm'", null)
+                    else { engine.sendPcm(pcm); result.success(null) }
                 }
-                // SCO in MODE_IN_COMMUNICATION already routes mic → BT.
-                // VR-N76 TX key-up is handled from the Dart layer via Benshi protocol.
-                "startPtt" -> result.success(null)
-                "stopPtt"  -> result.success(null)
+                "endTx" -> { engine.endTx(); result.success(null) }
+
+                "isOpen" -> result.success(engine.isOpen)
+
                 else -> result.notImplemented()
             }
         }
 
-        registerScoReceiver()
-
         // ── RepeaterBook Connect channel ──────────────────────────────────────
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, rbChannel)
+        MethodChannel(messenger, rbChannel)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isInstalled" -> {
@@ -124,9 +122,7 @@ class MainActivity : FlutterActivity() {
                                 val uri = Uri.parse(
                                     "content://com.zbm2.repeaterbook.RBContentProvider/repeaters"
                                 )
-                                val cursor = contentResolver.query(
-                                    uri, null, null, null, null
-                                )
+                                val cursor = contentResolver.query(uri, null, null, null, null)
                                 if (cursor == null) {
                                     android.util.Log.w("OpenHT", "RB: cursor null — app not installed or provider not exported")
                                     result.success(emptyList<Map<String, Any?>>())
@@ -146,12 +142,9 @@ class MainActivity : FlutterActivity() {
                                         for (col in it.columnNames) {
                                             val idx = it.getColumnIndex(col)
                                             row[col] = when (it.getType(idx)) {
-                                                android.database.Cursor.FIELD_TYPE_INTEGER ->
-                                                    it.getLong(idx)
-                                                android.database.Cursor.FIELD_TYPE_FLOAT ->
-                                                    it.getDouble(idx)
-                                                android.database.Cursor.FIELD_TYPE_STRING ->
-                                                    it.getString(idx)
+                                                android.database.Cursor.FIELD_TYPE_INTEGER -> it.getLong(idx)
+                                                android.database.Cursor.FIELD_TYPE_FLOAT -> it.getDouble(idx)
+                                                android.database.Cursor.FIELD_TYPE_STRING -> it.getString(idx)
                                                 else -> null
                                             }
                                         }
@@ -167,5 +160,11 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        audioEngine?.dispose()
+        audioEngine = null
     }
 }

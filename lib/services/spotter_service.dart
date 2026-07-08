@@ -7,28 +7,54 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml/xml.dart';
 import '../models/spotter_station.dart';
 
 class SpotterService extends ChangeNotifier {
   static const String _feedUrl = 'http://www.spotternetwork.org/misc/data.xml';
   static const Duration _pollInterval = Duration(seconds: 60);
+  static const String _prefKey = 'spotter_network_enabled';
 
   List<SpotterStation> _spotters = [];
   bool _isLoading = false;
+  bool _enabled = false;
   String? _error;
   Timer? _timer;
 
-  List<SpotterStation> get spotters => List.unmodifiable(_spotters);
+  List<SpotterStation> get spotters => _enabled ? List.unmodifiable(_spotters) : const [];
   bool get isLoading => _isLoading;
+  bool get enabled => _enabled;
   String? get error => _error;
 
   Future<void> init() async {
-    await fetch();
-    _timer = Timer.periodic(_pollInterval, (_) => fetch());
+    final prefs = await SharedPreferences.getInstance();
+    _enabled = prefs.getBool(_prefKey) ?? false;
+    notifyListeners();
+    if (_enabled) {
+      await fetch();
+      _timer = Timer.periodic(_pollInterval, (_) => fetch());
+    }
+  }
+
+  Future<void> setEnabled(bool value) async {
+    if (_enabled == value) return;
+    _enabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefKey, value);
+    if (value) {
+      await fetch();
+      _timer ??= Timer.periodic(_pollInterval, (_) => fetch());
+    } else {
+      _timer?.cancel();
+      _timer = null;
+      _spotters = [];
+    }
+    notifyListeners();
   }
 
   Future<void> fetch() async {
+    if (!_enabled) return;
     _isLoading = true;
     _error = null;
     notifyListeners();

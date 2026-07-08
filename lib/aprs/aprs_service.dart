@@ -57,7 +57,20 @@ class AprsService extends ChangeNotifier {
     if (existing == null ||
         packet.source == AprsSource.rf ||
         existing.source == AprsSource.aprsIs) {
-      _lastHeard[key] = packet;
+      // Carry the station's last-known position forward. Many APRS packets
+      // (status, messages, telemetry, WX-without-position) have no lat/lon;
+      // without this they clobber the stored position and the station is
+      // counted but silently dropped from the map.
+      var toStore = packet;
+      if (!packet.hasPosition && existing != null && existing.hasPosition) {
+        toStore = packet.copyWith(
+          latitude: existing.latitude,
+          longitude: existing.longitude,
+          symbol: packet.symbol ?? existing.symbol,
+          symbolTable: packet.symbolTable ?? existing.symbolTable,
+        );
+      }
+      _lastHeard[key] = toStore;
     }
 
     // Track all sources heard

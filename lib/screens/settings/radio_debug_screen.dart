@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_benlink/flutter_benlink.dart';
@@ -13,42 +12,12 @@ class RadioDebugScreen extends StatefulWidget {
 }
 
 class _RadioDebugScreenState extends State<RadioDebugScreen> {
-  final List<(String, String)> _logs = []; // (direction, hex)
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    final radio = context.read<RadioService>();
-    radio.onRawBytesSent = (b) => _addLog('TX', b);
-    radio.onRawBytesReceived = (b) => _addLog('RX', b);
-  }
-
-  @override
   void dispose() {
-    final radio = context.read<RadioService>();
-    radio.onRawBytesSent = null;
-    radio.onRawBytesReceived = null;
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _addLog(String direction, Uint8List bytes) {
-    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0').toUpperCase()).join(' ');
-    final timestamp = DateTime.now().toString().split(' ').last.substring(0, 8);
-    if (!mounted) return;
-    setState(() {
-      _logs.add((direction, '[$timestamp] $direction: $hex'));
-    });
-    _scrollToBottom();
-  }
-
-  void _addTextLog(String message) {
-    if (!mounted) return;
-    setState(() {
-      _logs.add(('INFO', message));
-    });
-    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -66,6 +35,8 @@ class _RadioDebugScreenState extends State<RadioDebugScreen> {
   @override
   Widget build(BuildContext context) {
     final radio = context.watch<RadioService>();
+    // Scroll to bottom whenever log updates
+    if (radio.debugLog.isNotEmpty) _scrollToBottom();
 
     return Scaffold(
       appBar: AppBar(
@@ -75,7 +46,7 @@ class _RadioDebugScreenState extends State<RadioDebugScreen> {
             icon: const Icon(Icons.copy),
             tooltip: 'Copy log',
             onPressed: () {
-              final text = _logs.map((e) => e.$2).join('\n');
+              final text = radio.debugLog.map((e) => e.$2).join('\n');
               Clipboard.setData(ClipboardData(text: text));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Log copied'), duration: Duration(seconds: 1)),
@@ -85,7 +56,7 @@ class _RadioDebugScreenState extends State<RadioDebugScreen> {
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             tooltip: 'Clear log',
-            onPressed: () => setState(() => _logs.clear()),
+            onPressed: () => context.read<RadioService>().clearDebugLog(),
           ),
         ],
       ),
@@ -155,9 +126,9 @@ class _RadioDebugScreenState extends State<RadioDebugScreen> {
               ),
               child: ListView.builder(
                 controller: _scrollController,
-                itemCount: _logs.length,
+                itemCount: radio.debugLog.length,
                 itemBuilder: (context, index) {
-                  final (direction, text) = _logs[index];
+                  final (direction, text) = radio.debugLog[index];
                   final color = switch (direction) {
                     'TX'   => Colors.greenAccent,
                     'RX'   => Colors.lightBlueAccent,
@@ -182,66 +153,66 @@ class _RadioDebugScreenState extends State<RadioDebugScreen> {
 
   Future<void> _sendVfoMode(RadioService radio) async {
     try {
-      _addTextLog('[INFO] Sending VFO mode command...');
+      radio.addDebugText('[INFO] Sending VFO mode command...');
       await radio.forceVfoMode();
-      _addTextLog('[INFO] VFO mode command sent.');
+      radio.addDebugText('[INFO] VFO mode command sent.');
     } catch (e) {
-      _addTextLog('[ERROR] $e');
+      radio.addDebugText('[ERROR] $e');
     }
   }
 
   Future<void> _sendTuneCommand(RadioService radio) async {
     try {
-      _addTextLog('[INFO] Tuning to 146.520 MHz...');
+      radio.addDebugText('[INFO] Tuning to 146.520 MHz...');
       await radio.tuneToFrequency(146.520);
-      _addTextLog('[INFO] Tune command sent.');
+      radio.addDebugText('[INFO] Tune command sent.');
     } catch (e) {
-      _addTextLog('[ERROR] $e');
+      radio.addDebugText('[ERROR] $e');
     }
   }
 
   Future<void> _sendSyncSettings(RadioService radio) async {
     try {
-      _addTextLog('[INFO] Sending sync (re-reading settings)...');
+      radio.addDebugText('[INFO] Sending sync (re-reading settings)...');
       await radio.syncSettings();
-      _addTextLog('[INFO] Sync complete.');
+      radio.addDebugText('[INFO] Sync complete.');
     } catch (e) {
-      _addTextLog('[ERROR] $e');
+      radio.addDebugText('[ERROR] $e');
     }
   }
 
   Future<void> _diagChannelCount(RadioService radio) async {
-    _addTextLog('[DIAG] firmwareChannelCount = ${radio.firmwareChannelCount}');
-    _addTextLog('[DIAG] channelA (VFO A) = ${radio.controller?.settings?.channelA ?? "?"}');
+    radio.addDebugText('[DIAG] firmwareChannelCount = ${radio.firmwareChannelCount}');
+    radio.addDebugText('[DIAG] channelA (VFO A) = ${radio.controller?.settings?.channelA ?? "?"}');
   }
 
   Future<void> _diagReadGroup6(RadioService radio) async {
-    _addTextLog('[DIAG] Reading Group 6 (channels 160–191)...');
+    radio.addDebugText('[DIAG] Reading Group 6 (channels 160–191)...');
     try {
-      final results = await radio.diagReadGroup(5); // group index 5 = IDs 160-191
+      final results = await radio.diagReadGroup(5);
       for (final line in results) {
-        _addTextLog('[DIAG] $line');
+        radio.addDebugText('[DIAG] $line');
       }
-      _addTextLog('[DIAG] Group 6 read complete (${results.length} channels).');
+      radio.addDebugText('[DIAG] Group 6 read complete (${results.length} channels).');
     } catch (e) {
-      _addTextLog('[ERROR] Read Group 6 failed: $e');
+      radio.addDebugText('[ERROR] Read Group 6 failed: $e');
     }
   }
 
   Future<void> _diagReadChannels(RadioService radio) async {
-    _addTextLog('[DIAG] Reading channels 0, 31, 160...');
+    radio.addDebugText('[DIAG] Reading channels 0, 31, 160...');
     for (final id in [0, 31, 160]) {
       final result = await radio.diagReadChannel(id);
-      _addTextLog('[DIAG] $result');
+      radio.addDebugText('[DIAG] $result');
     }
   }
 
   Future<void> _diagWriteChannels(RadioService radio) async {
-    _addTextLog('[DIAG] Writing test channel at IDs 0 and 160 (146.520 MHz)...');
+    radio.addDebugText('[DIAG] Writing test channel at IDs 0 and 160 (146.520 MHz)...');
     final r0 = await radio.diagWriteChannel(0, 146.520);
-    _addTextLog('[DIAG] $r0');
+    radio.addDebugText('[DIAG] $r0');
     final r160 = await radio.diagWriteChannel(160, 146.520);
-    _addTextLog('[DIAG] $r160');
+    radio.addDebugText('[DIAG] $r160');
   }
 }
 
@@ -271,7 +242,6 @@ class _RadioStatePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Status + model row
           Row(
             children: [
               Container(
@@ -296,7 +266,6 @@ class _RadioStatePanel extends StatelessWidget {
           ),
           if (connected) ...[
             const SizedBox(height: 4),
-            // Frequency / mode / battery row
             Row(
               children: [
                 _InfoChip(

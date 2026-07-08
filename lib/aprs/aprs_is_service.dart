@@ -20,6 +20,20 @@ class AprsIsService extends ChangeNotifier {
   AprsIsState _state = AprsIsState.disconnected;
   String? _errorMessage;
   Timer? _reconnectTimer;
+  Timer? _beaconTimer;
+  DateTime? _lastBeaconAt;
+
+  // Live phone GPS, kept fresh by the GpsService proxy in main.dart.
+  double? _gpsLat;
+  double? _gpsLon;
+
+  DateTime? get lastBeaconAt => _lastBeaconAt;
+
+  /// Called by the provider wiring whenever GpsService updates.
+  void updateGps(double? lat, double? lon) {
+    _gpsLat = lat;
+    _gpsLon = lon;
+  }
 
   // Raw packet stream broadcast — AprsService subscribes to this
   final _packetController = StreamController<String>.broadcast();
@@ -90,6 +104,10 @@ class AprsIsService extends ChangeNotifier {
 
       _setState(AprsIsState.connected);
 
+      // First beacon shortly after login so the server has processed logresp;
+      // subsequent beacons follow the configured interval.
+      _scheduleNextBeacon(delay: const Duration(seconds: 15));
+
       _sub = _socket!
           .cast<List<int>>()
           .transform(utf8.decoder)
@@ -134,10 +152,79 @@ class AprsIsService extends ChangeNotifier {
 
   void disconnect() {
     _reconnectTimer?.cancel();
+    _beaconTimer?.cancel();
     _sub?.cancel();
     _socket?.destroy();
     _socket = null;
     _setState(AprsIsState.disconnected);
+  }
+
+  // ── Position beaconing ─────────────────────────────────────────────────────
+  // Fixed-interval position reports to APRS-IS, driven by the Beacon settings
+  // (aprs_beacon_enabled / aprs_beacon_interval_min / aprs_beacon_comment).
+  // Prefs are re-read every cycle so settings changes apply without reconnect.
+
+  void _scheduleNextBeacon({Duration? delay}) async {
+    _beaconTimer?.cancel();
+    if (!isConnected) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool('aprs_beacon_enabled') ?? false)) {
+      // Disabled — re-check periodically so enabling it takes effect live.
+      _beaconTimer = Timer(const Duration(seconds: 30), _scheduleNextBeacon);
+      return;
+    }
+    final interval =
+        Duration(minutes: prefs.getInt('aprs_beacon_interval_min') ?? 5);
+    _beaconTimer = Timer(delay ?? interval, () async {
+      await _sendBeacon();
+      _scheduleNextBeacon();
+    });
+  }
+
+  /// Send one position beacon immediately (also used by the beacon timer).
+  Future<void> beaconNow() => _sendBeacon();
+
+  Future<void> _sendBeacon() async {
+    if (!isConnected) return;
+    final lat = _gpsLat, lon = _gpsLon;
+    if (lat == null || lon == null) {
+      debugPrint('AprsIS: beacon skipped — no GPS fix');
+      return;
+    }
+    final prefs    = await SharedPreferences.getInstance();
+    final callsign = prefs.getString('callsign') ?? '';
+    if (callsign.isEmpty) return;
+    final ssid    = prefs.getInt('aprs_ssid') ?? 7;
+    final table   = prefs.getString('aprs_symbol_table') ?? '/';
+    final symbol  = prefs.getString('aprs_symbol_char') ?? '>';
+    final comment = prefs.getString('aprs_beacon_comment') ?? '';
+
+    // Uncompressed position report, no timestamp, messaging-capable ('=').
+    // APZOHT: APZ* is the experimental tocall range per the APRS spec.
+    final line = '$callsign-$ssid>APZOHT,TCPIP*:'
+        '=${_aprsLat(lat)}$table${_aprsLon(lon)}$symbol$comment';
+    sendLine(line);
+    _lastBeaconAt = DateTime.now();
+    notifyListeners();
+  }
+
+  // DDMM.mmN / DDDMM.mmW per APRS spec §6 (uncompressed position format).
+  static String _aprsLat(double lat) {
+    final hemi = lat >= 0 ? 'N' : 'S';
+    var deg = lat.abs().floor();
+    var min = (lat.abs() - deg) * 60;
+    if (min >= 59.995) { deg += 1; min = 0; }
+    return '${deg.toString().padLeft(2, '0')}'
+        '${min.toStringAsFixed(2).padLeft(5, '0')}$hemi';
+  }
+
+  static String _aprsLon(double lon) {
+    final hemi = lon >= 0 ? 'E' : 'W';
+    var deg = lon.abs().floor();
+    var min = (lon.abs() - deg) * 60;
+    if (min >= 59.995) { deg += 1; min = 0; }
+    return '${deg.toString().padLeft(3, '0')}'
+        '${min.toStringAsFixed(2).padLeft(5, '0')}$hemi';
   }
 
   double? _lastLat;
@@ -160,6 +247,7 @@ class AprsIsService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _beaconTimer?.cancel();
     disconnect();
     _packetController.close();
     super.dispose();
