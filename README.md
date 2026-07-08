@@ -63,7 +63,16 @@ tools the vendor app lacks. It is a radio-programming tool first, not a repeater
 - **Full per-channel editor** — title, RX/TX freq, CTCSS/DCS, TX power, bandwidth, scan, talk-around,
   TX-disable, mute, pre/de-emphasis.
 - **Per-group editor** — open any group to see its real channels, edit them, and **rename the group**.
-- Themed group writes **clear-then-write** and set the group name: NOAA → Group 5, Near Repeaters → Group 6.
+- Themed group writes **clear-then-write** and set the group name.
+
+**Reserved group layout** — you can still write channels or plans to *any* group manually
+(channel/group editor, or the Frequency Plans group picker):
+
+| Group | Purpose |
+|-------|---------|
+| **4** | Emergency-Net Frequency Plans (ARES / RACES / SKYWARN) — written from the **Frequency Plans** menu |
+| **5** | NOAA Weather |
+| **6** | Near Repeater programming (RepeaterBook — unlocked with an API token) |
 
 ### Frequency Plans (codeplug builder)
 - Create, edit, and delete **multiple area plans** (bundled templates + your own).
@@ -90,8 +99,10 @@ tools the vendor app lacks. It is a radio-programming tool first, not a repeater
 - Channel & Group Manager, Frequency Plans, RepeaterBook, Weather, APRS, Developer.
 - Radio Debug Terminal — live HEX TX/RX log.
 
-### 🚧 In progress
-- Android Auto UI · Winlink/BBS · BLE connection mode.
+### 🚧 Pending
+- **RepeaterBook** approved-distributed-app application + API token integration — the in-app plumbing
+  (secure token entry, headers, attribution, gating) is in place; live Web API access is pending
+  RepeaterBook's approval of OpenHT as an approved distributed app.
 
 ---
 
@@ -103,11 +114,12 @@ user-triggered. It does **not** provide a public repeater directory, search page
 ### RepeaterBook
 Two paths, both keeping value with RepeaterBook:
 
-1. **Emergency-net plan building** (no token) — if you have the **RepeaterBook Connect** app installed,
-   OpenHT can build a **frequency plan of local ARES / RACES / SKYWARN repeaters** (2 m / 70 cm, FM) and
-   write it to **Channel Group 4**. This uses your own RepeaterBook Connect subscription.
-2. **Near Repeaters "Tune To"** (token required) — uses the **RepeaterBook Web API** with **your own
-   app-bound token**.
+1. **Emergency-net plan building** (no token) — with the **RepeaterBook Connect** app installed, OpenHT
+   builds a **frequency plan of local ARES / RACES / SKYWARN repeaters** (2 m / 70 cm, FM) and writes it
+   to **Channel Group 4**, from the **Frequency Plans** menu, using your own RepeaterBook Connect
+   subscription. This is the *only* way emergency-net RB data is written, and it only targets Group 4.
+2. **Near Repeater programming + "Tune To"** (token required) — uses the **RepeaterBook Web API** with
+   **your own app-bound token** to program near repeaters (**Group 6**) and tune the radio.
 
 **Getting a token** (once OpenHT is an approved distributed app):
 1. Sign in at [repeaterbook.com](https://www.repeaterbook.com) → **API Apps & Tokens**

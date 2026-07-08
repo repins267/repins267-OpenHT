@@ -24,6 +24,11 @@ class RepeaterBookTokenService extends ChangeNotifier {
   /// Attribution string to show wherever RepeaterBook data appears.
   static const attribution = 'Data courtesy of RepeaterBook.com';
 
+  /// Application User-Agent — MUST match the value approved with RepeaterBook,
+  /// or runtime requests are denied (ua_mismatch).
+  static const userAgent =
+      'OpenHT/1.0 (+https://github.com/repins267/repins267-OpenHT; cyrus.field762@gmail.com)';
+
   String? _token;
 
   /// True when a token is stored — gates RB Web API features (Tune To).
@@ -67,7 +72,7 @@ class RepeaterBookTokenService extends ChangeNotifier {
     if (t == null || t.isEmpty) return {};
     return {
       'X-RB-App-Token': t,
-      'User-Agent': 'OpenHT (github.com/repins267/repins267-OpenHT; N0TEZ)',
+      'User-Agent': userAgent,
     };
   }
 }
