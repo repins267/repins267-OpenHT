@@ -39,6 +39,7 @@ import 'services/spc_service.dart';
 import 'services/mping_service.dart';
 import 'services/lsr_service.dart';
 import 'services/spotter_network_service.dart';
+import 'services/repeaterbook_token_service.dart';
 import 'screens/weather/weather_layer_drawer.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/near_repeater/near_repeater_screen.dart';
@@ -114,6 +115,11 @@ class OpenHtApp extends StatelessWidget {
         }),
         ChangeNotifierProvider(create: (_) {
           final svc = AprsAuthService();
+          svc.load();
+          return svc;
+        }),
+        ChangeNotifierProvider(create: (_) {
+          final svc = RepeaterBookTokenService();
           svc.load();
           return svc;
         }),

@@ -140,7 +140,12 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
   _MapRepeater? _selectedRepeater;
   bool _showAprs = true;
   bool _showSpotters = true;
-  bool _showRepeaters = true;
+  // Repeater map layer disabled to keep OpenHT a radio-programming tool (not a
+  // browsable repeater finder/map) per RepeaterBook API policy. All the layer
+  // code is preserved below; flip this back to true and restore the toggle to
+  // re-enable in the future. Repeater data is still used for channel programming
+  // (Near Repeaters / frequency plans), just not displayed on the map.
+  final bool _showRepeaters = false;
   bool _isRecording = false;
   _RepeaterSource _repeaterSource = _RepeaterSource.bundledGpx;
   bool _isCachingTiles = false;
@@ -688,6 +693,9 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
                 setState(() => _showSpotters = v ?? true);
               },
             ),
+            // Repeater map-layer toggle disabled (RepeaterBook policy — see
+            // _showRepeaters). Preserved for future re-enable.
+            /*
             CheckboxListTile(
               title: Text(
                 'Repeaters (${_repeaters.length} total)',
@@ -708,6 +716,7 @@ class _AprsMapScreenState extends State<AprsMapScreen> {
                 setState(() => _showRepeaters = v ?? true);
               },
             ),
+            */
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../bluetooth/radio_service.dart';
 import 'freq_plans_screen.dart';
+import 'repeaterbook_settings_screen.dart';
 import '../../services/noaa_service.dart';
 import 'tracks_screen.dart';
 import 'aprs_settings_screen.dart';
@@ -341,6 +342,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const FreqPlansScreen()),
+            ),
+          ),
+
+          // ─── RepeaterBook ─────────────────────────────
+          _SectionHeader('RepeaterBook'),
+          ListTile(
+            leading: const Icon(Icons.cell_tower, color: Colors.teal),
+            title: const Text('RepeaterBook API token',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text(
+                'Add your token to unlock Near Repeaters "Tune To"',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const RepeaterBookSettingsScreen()),
             ),
           ),
 

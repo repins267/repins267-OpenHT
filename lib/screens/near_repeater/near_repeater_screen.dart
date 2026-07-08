@@ -15,6 +15,7 @@ import '../../services/gps_service.dart';
 import '../../bluetooth/radio_service.dart';
 import '../../services/repeaterbook_connect_service.dart';
 import '../../services/repeaterbook_service.dart';
+import '../../services/repeaterbook_token_service.dart';
 
 // Returns radio GPS if the radio has a fix, otherwise falls back to phone GPS.
 ({double? lat, double? lon, bool hasPos}) _bestGps(
@@ -412,6 +413,15 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
 
   Future<void> _tune(_Repeater r, int index) async {
     final radio = context.read<RadioService>();
+    // Gate: RepeaterBook "Tune To" requires the user's own app-bound API token.
+    // (Emergency-net plan building via RB Connect does not use this feature.)
+    if (!context.read<RepeaterBookTokenService>().hasToken) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(
+            'Add a RepeaterBook API token in Settings → RepeaterBook to enable "Tune To".')),
+      );
+      return;
+    }
     if (!radio.isConnected) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Radio not connected')),
