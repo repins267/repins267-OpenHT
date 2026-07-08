@@ -117,12 +117,19 @@ class MainActivity : FlutterActivity() {
                         result.success(installed)
                     }
                     "queryRepeaters" -> {
+                        // Optional user location — passed as selectionArgs so the
+                        // RepeaterBook provider computes proximity from here instead
+                        // of its 0,0 default. Format per RepeaterBookConnect: [lat, lon].
+                        val lat = call.argument<Double>("lat")
+                        val lon = call.argument<Double>("lon")
+                        val selArgs = if (lat != null && lon != null)
+                            arrayOf(lat.toString(), lon.toString()) else null
                         Thread {
                             try {
                                 val uri = Uri.parse(
                                     "content://com.zbm2.repeaterbook.RBContentProvider/repeaters"
                                 )
-                                val cursor = contentResolver.query(uri, null, null, null, null)
+                                val cursor = contentResolver.query(uri, null, null, selArgs, null)
                                 if (cursor == null) {
                                     android.util.Log.w("OpenHT", "RB: cursor null — app not installed or provider not exported")
                                     result.success(emptyList<Map<String, Any?>>())

@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,6 +26,10 @@ class RbConnectRepeater {
   final bool isOpen;
   final String band;         // '2m' or '70cm'
   final String serviceText;  // 'FM', 'FM Fusion', 'DMR', 'DStar', etc.
+  final bool ares;
+  final bool races;
+  final bool skywarn;
+  final bool canwarn;
   double distanceMiles;
 
   RbConnectRepeater({
@@ -40,8 +45,26 @@ class RbConnectRepeater {
     required this.isOpen,
     required this.band,
     this.serviceText = 'FM',
+    this.ares = false,
+    this.races = false,
+    this.skywarn = false,
+    this.canwarn = false,
     this.distanceMiles = 0,
   });
+
+  /// True if affiliated with any emergency net.
+  bool get isEmergencyNet => ares || races || skywarn || canwarn;
+
+  /// Short label of the emergency nets this repeater serves, e.g. "ARES · SKYWARN".
+  String get emergencyNetLabel {
+    final nets = <String>[
+      if (ares) 'ARES',
+      if (races) 'RACES',
+      if (skywarn) 'SKYWARN',
+      if (canwarn) 'CANWARN',
+    ];
+    return nets.join(' · ');
+  }
 
   Map<String, dynamic> toJson() => {
     'lat': lat, 'lon': lon,
@@ -55,6 +78,7 @@ class RbConnectRepeater {
     'isOpen': isOpen,
     'band': band,
     'serviceText': serviceText,
+    'ares': ares, 'races': races, 'skywarn': skywarn, 'canwarn': canwarn,
   };
 
   factory RbConnectRepeater.fromJson(Map<String, dynamic> j) =>
@@ -71,6 +95,10 @@ class RbConnectRepeater {
         isOpen:       j['isOpen'] as bool,
         band:         j['band'] as String,
         serviceText:  j['serviceText'] as String? ?? 'FM',
+        ares:         j['ares'] as bool? ?? false,
+        races:        j['races'] as bool? ?? false,
+        skywarn:      j['skywarn'] as bool? ?? false,
+        canwarn:      j['canwarn'] as bool? ?? false,
       );
 
   /// True if this repeater is compatible with analog FM radios (VR-N76, etc.).
@@ -84,6 +112,7 @@ class RepeaterBookConnectService {
   // In-memory cache so callers can access data between queries
   static List<RbConnectRepeater> _cache    = [];
   static DateTime?               _cachedAt;
+  static bool                    _loggedColumns = false;
 
   static List<RbConnectRepeater> get cachedRepeaters => List.unmodifiable(_cache);
   static DateTime?               get cachedAt        => _cachedAt;
@@ -140,10 +169,21 @@ class RepeaterBookConnectService {
   /// Queries the RepeaterBook content provider and returns parsed repeaters.
   /// On success the results are persisted to disk for offline use.
   /// Returns an empty list if RepeaterBook is not installed or the query fails.
-  static Future<List<RbConnectRepeater>> queryRepeaters() async {
+  static Future<List<RbConnectRepeater>> queryRepeaters({double? lat, double? lon}) async {
     try {
-      final rawList = await _channel.invokeMethod<List>('queryRepeaters');
+      final rawList = await _channel.invokeMethod<List>(
+        'queryRepeaters',
+        (lat != null && lon != null) ? {'lat': lat, 'lon': lon} : null,
+      );
       if (rawList == null || rawList.isEmpty) return [];
+
+      // One-time diagnostic: log the provider's column names so we can confirm
+      // the emergency-net field names (ARES/RACES/SKYWARN/CANWARN).
+      if (!_loggedColumns) {
+        _loggedColumns = true;
+        debugPrint('RbConnect: provider columns = '
+            '${Map<String, dynamic>.from(rawList.first as Map).keys.toList()}');
+      }
 
       final result = <RbConnectRepeater>[];
       for (final raw in rawList) {
@@ -193,6 +233,14 @@ class RepeaterBookConnectService {
 
       final serviceText = (row['ServiceTxt'] as String?)?.trim() ?? 'FM';
 
+      // Emergency-net affiliation is a single `EmergencyNet` bitmask column
+      // (confirmed from the provider's SQL: `EmergencyNet & 7`).
+      final emNet   = _toLong(row['EmergencyNet']) ?? 0;
+      final ares    = (emNet & 1) != 0;
+      final races   = (emNet & 2) != 0;
+      final skywarn = (emNet & 4) != 0;
+      final canwarn = (emNet & 8) != 0;
+
       // Pre-computed distance from Repeaterbook's configured location
       final distance = _toDouble(row['Distance']) ?? 0.0;
 
@@ -209,6 +257,10 @@ class RepeaterBookConnectService {
         isOpen: isOpen,
         band: band,
         serviceText: serviceText,
+        ares: ares,
+        races: races,
+        skywarn: skywarn,
+        canwarn: canwarn,
         distanceMiles: distance,
       );
     } catch (e) {
@@ -234,6 +286,40 @@ class RepeaterBookConnectService {
     if (v is int) return v.toDouble();
     if (v is String) return double.tryParse(v);
     return null;
+  }
+
+  /// Emergency-net repeaters near [lat],[lon] within [radiusMiles], usable by an
+  /// analog FM 2m/70cm radio (VR-N76). Uses whatever RB Connect data is cached
+  /// or freshly queried. Sorted by distance.
+  static Future<List<RbConnectRepeater>> emergencyNetsNear({
+    required double lat,
+    required double lon,
+    double radiusMiles = 150,
+  }) async {
+    var data = await queryRepeaters(lat: lat, lon: lon);
+    if (data.isEmpty) data = cachedRepeaters;
+    final out = <RbConnectRepeater>[];
+    for (final r in data) {
+      if (!r.isEmergencyNet) continue;
+      if (!r.isFmCompatible) continue; // analog FM only
+      final d = _haversineMiles(lat, lon, r.lat, r.lon);
+      if (d > radiusMiles) continue;
+      r.distanceMiles = d;
+      out.add(r);
+    }
+    out.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
+    return out;
+  }
+
+  static double _haversineMiles(double lat1, double lon1, double lat2, double lon2) {
+    const r = 3958.7613; // Earth radius, miles
+    double rad(double d) => d * (math.pi / 180.0);
+    final dLat = rad(lat2 - lat1);
+    final dLon = rad(lon2 - lon1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(rad(lat1)) * math.cos(rad(lat2)) *
+            math.sin(dLon / 2) * math.sin(dLon / 2);
+    return 2 * r * math.asin(math.min(1.0, math.sqrt(a)));
   }
 
   static int? _toLong(dynamic v) {
