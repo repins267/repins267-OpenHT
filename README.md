@@ -57,6 +57,15 @@ tools the vendor app lacks. It is a radio-programming tool first, not a repeater
 
 ---
 
+## 🔬 Field Notes (firmware research)
+
+Reverse-engineering notes on the VR-N76 firmware-update system (gRPC check, OSS download, GAIA
+flash), the DFU2 image structure, and the signature-enforcement findings:
+**[docs/fieldnotes/vr-n76-firmware.md](docs/fieldnotes/vr-n76-firmware.md)**. All RE done on my own
+hardware — no vendor binaries redistributed.
+
+---
+
 ## Features
 
 ### Channel & Group Management
