@@ -8,6 +8,8 @@
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg)]()
 [![Radio: VR-N76 / VR-N7600](https://img.shields.io/badge/Radio-VR--N76%20%7C%20VR--N7600-orange.svg)]()
 
+**Maintainer:** N0TEZ · [github.com/repins267](https://github.com/repins267)
+
 ## 📱 Screenshots
 
 <table>
@@ -111,6 +113,10 @@ tools the vendor app lacks. It is a radio-programming tool first, not a repeater
 OpenHT uses repeater / emergency-net data **only to help you program your own radio**, per-user and
 user-triggered. It does **not** provide a public repeater directory, search page, or map service.
 
+OpenHT does **not** cache server-side, store, redistribute, or expose RepeaterBook data to other
+users or third parties. Every query uses the individual user's own token, returns data only to that
+user's device, and is used solely to program that user's own radio.
+
 ### RepeaterBook
 Two paths, both keeping value with RepeaterBook:
 
@@ -130,6 +136,10 @@ Two paths, both keeping value with RepeaterBook:
 OpenHT sends it as `X-RB-App-Token: rbuapp_…`, honors per-app rate limits, and shows
 **"Data courtesy of RepeaterBook.com"** wherever RepeaterBook data appears. Tokens are stored securely
 on-device (encrypted) and never embedded in the app.
+
+**API usage:** OpenHT calls the RepeaterBook Web API only on explicit user action (Near Repeater
+search / "Tune To"), at human-interaction rates, with the user's token in `X-RB-App-Token`. Results
+are shown or programmed on-device and are not persisted beyond the session.
 
 > **Approved-app status:** OpenHT is a non-commercial, open-source, distributed client — the same
 > category as RepeaterBook's already-approved *HTCommander* port (App #98). No shared secret ships in
