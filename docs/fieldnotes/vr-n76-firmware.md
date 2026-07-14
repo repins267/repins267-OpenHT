@@ -11,16 +11,17 @@ your own hardware.*
 > **GAIA VM-Upgrade** protocol. The whole pipeline is mapped: gRPC update **check** → Alibaba Cloud
 > OSS **download** (a `bsdiff4` patch on a shared base) → two-phase GAIA **flash**. The DFU2 image is
 > cryptographically **signed** (a 132-byte key-dependent block at `0x77c` that is *not* offline
-> forgeable) — **but the VM-Upgrade bootloader does not enforce that signature at validation**
-> (bench-verified): a payload-modified, stale-signature image is accepted. The remaining unknowns are
-> whether a modified image actually *boots* (runtime/secure-boot check), the CSR-compressed payload
-> barrier, and the STM32 update path.
+> forgeable) — **but the CSR VM-Upgrade bootloader does not enforce it, proven end to end**: a
+> byte-modified, stale-signature image was flashed over BT, **committed, rebooted, and confirmed as
+> the running firmware** (via `whichimage_probe`), with **no SPI and no key**. Custom firmware over
+> BT is proven. Caveat: proven with a *data* byte; *code* changes ride the same path but carry boot
+> risk (keep SPI recovery as the un-brick net).
 
 > [!WARNING]
-> Do not commit/flash a *modified* image until the full custom path is settled end-to-end. The
-> enforcement test below is safe *because* it aborts before commit — staged bytes land only in the
-> inactive flash bank and are discarded. Keep an SPI recovery path available before attempting a real
-> commit.
+> The sig-not-enforced path is proven with a *data*-byte change. A **code** change rides the same
+> path but can **brick** the radio if it doesn't boot — keep a stock OTA-reflash + **SPI recovery**
+> ready before flashing modified *code*. The enforcement test below is safe regardless *because* it
+> aborts before commit (staged bytes land only in the inactive flash bank and are discarded).
 
 ## Contents
 
@@ -174,24 +175,19 @@ Phase 2 — confirm (after reconnect):
 ## 3. DFU2 image anatomy
 
 The image is a Benshi `APPUHDR2` wrapper around a **CSR DFU container** (`CSR-dfu`) that carries
-firmware for **both** processors, plus assets:
+firmware for **both** processors:
 
 | Area | Magic | Contents |
 |---|---|---|
-| Wrapper header | `APPUHDR2` | Benshi outer header; a **132-byte key-dependent signature at `0x77c`** (see §4) |
 | CSR stack | `CSRbcfw1` | CSR8670 firmware text+const (**XAP** core) |
-| FileSystem | `fsr_dfu1` | **`vm.app`** (CSR VM app — GAIA/BT/audio/USB), **`dis_firmware`** (the STM32F103 image), `*.pcm` audio, `config` — preceded by its **own 128-byte signature + uint32 checksum** |
+| FileSystem | `fsr_dfu1` | **`vm.app`** (CSR VM app — GAIA/BT/audio/USB), **`dis_firmware`** (the STM32F103 image), `*.pcm` audio, `config`. Its integrity block is the **132-byte `maybe_signature[128]` + 4-byte checksum at `0x77c`** (see §4). The whole FS is 16-bit byte-swapped. |
 | Footer | `APPUPFTR` | CSR upgrade footer (CSR checksum) |
 
-**Two firmware images, two signature blocks.** The CSR8670's own stack (`CSRbcfw1`) and the STM32's
-`dis_firmware` (a file inside the signed FileSystem) both ride in one OTA. The **outer 132-byte
-signature** (`0x77c`) and the **FileSystem's 128-byte signature** are distinct — which one covers a
-given edit determines which gate you're testing (see §5, §8).
-
-`custom_firmware.py`'s "cleartext bootstrap" editing window (`0xA50C`..`+0x26000`) sits in the CSR
-**stack** region; the bulk above it is a **CSR-compressed blob** (unsafe to edit without handling the
-compression). The `extract_dfu_fs.py` tool walks the `fsr_dfu1` FileSystem to pull `vm.app` /
-`dis_firmware` / configs.
+Both processors' firmware ships in one OTA: the CSR8670 stack and the STM32 `dis_firmware` (a file
+inside the FileSystem). `extract_dfu_fs.py` walks the `fsr_dfu1` FileSystem to pull `vm.app` /
+`dis_firmware` / configs (de-swap each to analyze). **There is one integrity block that matters —
+the FileSystem signature+checksum at `0x77c` — and it is not enforced (§5).** Part of the payload is
+a **CSR-compressed blob** (the bulk of the code), unsafe to edit without handling the compression.
 
 ---
 
@@ -247,14 +243,12 @@ python firmware_enforcement_test.py --mac AA:BB:CC:DD:EE:FF --image test.firmwar
 | `0x21` BATTERY_LOW / `0x22` INVALID_SYNC / `0x81` SYNC_DIFFERENT | Environmental / resume | Not a verdict — charge & retry |
 
 > [!TIP]
-> **Bench verdict: PASS — the signature is NOT enforced.** The radio accepted the payload-modified /
-> stale-signature image at validation, so there is no meaningful payload authentication at the
-> VM-Upgrade layer. Custom firmware is open *in principle*. What remains: proving a modified image
-> actually **boots and runs** (§8).
->
-> **Scope caveat:** the flipped byte lands in the **CSR stack** region (outer `0x77c` signature). The
-> FileSystem's 128-byte signature — which covers `vm.app` and the STM32 `dis_firmware` — is a
-> *separate* gate; to prove *that* one, re-run this with a byte flipped inside a FileSystem file.
+> **Bench verdict: PASS — the signature is NOT enforced, end to end.** The radio accepted the
+> byte-modified / stale-signature image at validation *and* it goes all the way: a modified image was
+> **committed, rebooted, and confirmed as the running firmware** (`whichimage_probe` →
+> `TRANSFER_COMPLETE` for the modded md5_tail) — **no SPI, no key.** Custom firmware over BT is
+> **proven.** Scope: proven with a *data* byte; *code* changes ride the same path but carry boot risk
+> — keep SPI recovery staged as the un-brick net.
 
 ---
 
@@ -334,23 +328,24 @@ payload also carries STM32/ARM code is an open question — §8, gap #5.)*
 | DFU2 image structure + signature block located | ✅ Proven |
 | 132-byte block = key-dependent signature (not forgeable offline) | ✅ Proven |
 | Signature **enforcement** at VM-Upgrade validation | ✅ Bench-tested → **NOT enforced (PASS)** |
-| **Runtime / secure-boot check** — does a modified image actually *boot*? | 🔬 **Open — biggest unknown** |
-| **CSR-compressed payload** — decompress / re-compress the bulk of the code | 🔬 Open — only the small cleartext bootstrap is editable today |
+| **Full custom-image commit end-to-end** | ✅ **Proven (2026-05-29)** — flashed → committed → rebooted → running-image confirmed via `whichimage_probe`; no SPI, no key |
+| **Runtime / secure-boot** — does a modified image *boot*? | ✅ **Proven** — a byte-modified image boots and runs |
+| **FileSystem signature+checksum @`0x77c`** (covers `vm.app` + `dis_firmware`) | ✅ **NOT enforced** — this *is* the block the enforcement byte was flipped under (stale sig + unfixed checksum → PASS) |
 | **STM32F103 update path** — where the RF logic lives | ✅ **Resolved** — `dis_firmware` is bundled as a file in the OTA's CSR DFU FileSystem; STM32 = UART command handler driving the RDA1846S, no USB |
 | **STM32 own integrity check** | ✅ **None** — the STM32 does zero signature/crypto verification; signing is entirely CSR-side |
-| **FileSystem 128-byte signature** (covers `vm.app` + `dis_firmware`) | 🔬 Open — a *distinct* gate from the tested outer sig; to modify the STM32/VM-app, re-run the enforcement test with a byte flipped inside a FileSystem file |
-| **SPI recovery** validated (brick safety net) | 🔬 Open — required before any real commit |
+| **CODE-change boot demo** (vs. the proven *data*-byte change) | 🔬 Open — same path, but code can brick if it doesn't boot |
+| **SPI recovery** validated (un-brick net for code demos) | 🔬 Open — prudent before flashing modified *code* |
+| **CSR-compressed payload** — decompress/recompress the bulk of the code | 🔬 Open — needed for large code edits |
 | APPUPFTR footer CRC coverage (for arbitrary edits) | 🔬 Open |
-| Full custom-image commit end-to-end | 🔬 Open |
 | Downgrade to older/unsigned loader | 🔬 Open |
-| Signing key + algorithm | 🔒 Unknowable without the key (by design) |
+| Signing key + algorithm | 🔒 Unknowable without the key (moot — enforcement is off) |
 
-**The realistic picture:** firmware *fetching/assembly* is complete and usable today. The STM32
-question is resolved — its firmware rides in the OTA and it does no signing of its own, so custom
-*radio* behavior is on the table in principle. For actual custom firmware, the outer signature gate
-is open, but **runtime secure-boot, the CSR-compression barrier, and the FileSystem-level signature**
-(which specifically covers the STM32/`vm.app` files) stand between here and a running modified image
-— and SPI recovery must be confirmed before risking a commit.
+**The realistic picture:** the sig-not-enforced path is **proven end to end** — a byte-modified
+image was flashed, committed, and booted as the running firmware over BT, no SPI or key. That's the
+headline. What's left is *scope*: it was proven with a **data** byte (a logo, invisible on the text
+splash). A **code** change — real custom behavior — rides the same path but carries boot risk, so the
+next milestone is a **visible code-change demo (callsign splash) with SPI recovery staged** as the
+un-brick net. Large code edits also need to crack the CSR-compression barrier.
 
 ---
 
