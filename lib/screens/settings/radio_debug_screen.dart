@@ -206,7 +206,15 @@ class _RadioDebugScreenState extends State<RadioDebugScreen> {
 
   Future<void> _diagChannelCount(RadioService radio) async {
     radio.addDebugText('[DIAG] firmwareChannelCount = ${radio.firmwareChannelCount}');
-    radio.addDebugText('[DIAG] channelA (VFO A) = ${radio.controller?.settings?.channelA ?? "?"}');
+    final s = radio.controller?.settings;
+    final chA = radio.controller?.channelA;
+    final chB = radio.controller?.channelB;
+    final aNum = s?.channelA != null ? '${s!.channelA + 1}' : '?';
+    final bNum = s?.channelB != null ? '${s!.channelB + 1}' : '?';
+    radio.addDebugText('[DIAG] VFO 1 / Band A = Channel $aNum (internal id ${s?.channelA ?? "?"})'
+        '${chA != null ? "  → ${chA.name} ${chA.rxFreq}" : ""}');
+    radio.addDebugText('[DIAG] VFO 2 / Band B = Channel $bNum (internal id ${s?.channelB ?? "?"})'
+        '${chB != null ? "  → ${chB.name} ${chB.rxFreq}" : ""}');
   }
 
   Future<void> _diagReadGroup6(RadioService radio) async {

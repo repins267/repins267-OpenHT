@@ -584,6 +584,55 @@ class RadioService extends ChangeNotifier {
     }
   }
 
+  /// APRS simplex presets, written explicitly to **Group 1** (region 0) so they
+  /// always land where the app/radio shows them regardless of the active group.
+  /// FM / WIDE / no-tone. Slot = 0-based channel index within the group:
+  ///   slot 28 → UI **Channel 29** = 70cm APRS **445.925 MHz** (common NA simplex, regional)
+  ///   slot 29 → UI **Channel 30** = 2m  APRS **144.390 MHz** (NA standard)
+  /// Returns how many of the two were written.
+  static const int kAprsGroupIndex = 0; // region 0 = UI Group 1
+  static const List<(int, String, double)> kAprsPresets = [
+    (28, 'APRS 70cm', 445.925),
+    (29, 'APRS 2m', 144.390),
+  ];
+
+  Future<int> writeAprsChannels() async {
+    _assertSynced();
+    // Region writes persist only in channel mode (vfoX=0).
+    final prevVfoX = await beginBulkWrite();
+    int written = 0;
+    try {
+      final template = await _controller!.getVfoChannel();
+      for (final (slot, name, freqMhz) in kAprsPresets) {
+        try {
+          final ch = template.copyWith(
+            channelId: slot, // slot within the group (0-based)
+            name: name,
+            rxFreq: freqMhz,
+            txFreq: freqMhz,
+            rxMod: ModulationType.FM,
+            txMod: ModulationType.FM,
+            bandwidth: BandwidthType.WIDE,
+            rxSubAudio: 0, // 0 = no tone (null would fall through to old tone)
+            txSubAudio: 0,
+            scan: false,
+            txDisable: false,
+            mute: false,
+          );
+          await _controller!.writeRegionChannel(kAprsGroupIndex, ch);
+          written++;
+          await Future.delayed(const Duration(milliseconds: 150));
+        } catch (e) {
+          debugPrint('OpenHT: APRS preset slot $slot (Ch ${slot + 1}) failed: $e');
+        }
+      }
+    } finally {
+      await endBulkWrite(prevVfoX);
+    }
+    notifyListeners();
+    return written;
+  }
+
   /// Write NOAA weather channels into Group 5 (0-indexed group 4, slots 128–134).
   Future<int> writeNoaaGroup() async {
     _assertSynced();

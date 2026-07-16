@@ -13,7 +13,6 @@ import 'aprs_settings_screen.dart';
 import 'noaa_radio_settings_screen.dart';
 import 'auth_settings_screen.dart';
 import 'channel_manager_screen.dart';
-import 'js8call_settings_screen.dart';
 import 'map_cache_settings_screen.dart';
 import 'radio_debug_screen.dart';
 import 'spotter_network_settings_screen.dart';
@@ -82,6 +81,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Live readout of which channel each VFO (Band) is currently tuned to.
+  /// VFO 1 = Band A (settings.channelA); VFO 2 = Band B (settings.channelB).
+  /// Displayed as the radio's own channel number (1-based = internal id + 1).
+  Widget _vfoTile(RadioService radio, int vfo) {
+    final s  = radio.controller?.settings;
+    final ch = vfo == 1 ? radio.controller?.channelA : radio.controller?.channelB;
+    final id = vfo == 1 ? s?.channelA : s?.channelB; // 0-based internal id
+    final chNum = id != null ? id + 1 : null;        // what the radio shows
+    final band = vfo == 1 ? 'Band A' : 'Band B';
+    final name = ch?.name.trim();
+    final freq = ch?.rxFreq;
+    final detail = (name != null && name.isNotEmpty)
+        ? '$name — ${freq?.toStringAsFixed(4) ?? "?"} MHz'
+        : (chNum != null ? 'Channel $chNum' : 'not loaded');
+    return ListTile(
+      dense: true,
+      leading: Icon(vfo == 1 ? Icons.looks_one_outlined : Icons.looks_two_outlined,
+          color: Colors.blueGrey),
+      title: Text('VFO $vfo · $band',
+          style: const TextStyle(color: Colors.white)),
+      subtitle: Text(detail, style: const TextStyle(color: Colors.white54)),
+      trailing: Text(chNum != null ? 'CH $chNum' : '—',
+          style: const TextStyle(color: Colors.white38, fontSize: 12)),
+    );
+  }
+
+  /// Write the two APRS simplex presets to Channels 29 (70cm) and 30 (2m).
+  /// Overwrites those slots, so confirm first.
+  Future<void> _programAprsChannels(RadioService radio) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Program APRS channels?'),
+        content: const Text(
+          'This overwrites two channel memories in Group 1:\n\n'
+          '• Channel 29 → APRS 70cm — 445.925 MHz\n'
+          '• Channel 30 → APRS 2m — 144.390 MHz\n\n'
+          'Both FM / wide / no tone. Anything currently stored in those two '
+          'channels will be replaced; the rest of Group 1 is untouched.',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Write')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    messenger.showSnackBar(
+        const SnackBar(content: Text('Writing APRS channels…')));
+    try {
+      final n = await radio.writeAprsChannels();
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: Text(n == 2
+            ? 'Wrote CH 29 (70cm) + CH 30 (2m APRS)'
+            : 'Wrote $n/2 APRS channels — check Radio Debug for errors'),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+          SnackBar(content: Text('APRS channel write failed: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final radio = context.watch<RadioService>();
@@ -112,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ─── Radio Connection ────────────────────────
           _SectionHeader('Radio Connection'),
-          if (radio.isConnected)
+          if (radio.isConnected) ...[
             ListTile(
               leading: const Icon(Icons.bluetooth_connected, color: Colors.blue),
               title: const Text('Radio connected', style: TextStyle(color: Colors.white)),
@@ -124,7 +192,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: radio.disconnect,
                 child: const Text('Disconnect', style: TextStyle(color: Colors.red)),
               ),
-            )
+            ),
+            _vfoTile(radio, 1),
+            _vfoTile(radio, 2),
+          ]
           else ...[
             ListTile(
               leading: const Icon(Icons.bluetooth_searching, color: Colors.grey),
@@ -321,6 +392,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const AprsSettingsScreen())),
           ),
+          ListTile(
+            leading: const Icon(Icons.playlist_add, color: Colors.green),
+            title: const Text('Program APRS Channels',
+                style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              radio.isConnected
+                  ? 'Write CH 29 = 70cm 445.925 · CH 30 = 2m 144.390 (FM, no tone)'
+                  : 'Connect radio first',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            enabled: radio.isConnected,
+            onTap: radio.isConnected ? () => _programAprsChannels(radio) : null,
+          ),
 
           // ─── Frequency Plans ─────────────────────────
           _SectionHeader('Frequency Plans'),
@@ -385,16 +469,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const AuthSettingsScreen())),
-          ),
-          ListTile(
-            leading: const Icon(Icons.waves_outlined, color: Colors.cyan),
-            title: const Text('JS8Call Settings',
-                style: TextStyle(color: Colors.white)),
-            subtitle: const Text('FM digital text mode (DSP stub)',
-                style: TextStyle(color: Colors.white54, fontSize: 12)),
-            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const Js8CallSettingsScreen())),
           ),
 
           // ─── Track Recording ─────────────────────────
