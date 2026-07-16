@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/aprs_map_settings.dart';
+import 'radio_beacon_settings_screen.dart';
 
 // ─── APRS passcode algorithm (standard hash, KC0AXJ) ─────────────────────────
 int computeAprsPasscode(String callsign) {
@@ -684,6 +685,18 @@ class _AprsSettingsScreenState extends State<AprsSettingsScreen> {
 
           // ─── Beacon ───────────────────────────────────
           _SectionHeader('Beacon'),
+          ListTile(
+            leading: const Icon(Icons.satellite_alt, color: Colors.lightBlue),
+            title: const Text('Radio Beacon (SmartBeacon)',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text('On-radio: SmartBeacon, Mic-E, share interval',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const RadioBeaconSettingsScreen())),
+          ),
           ListTile(
             leading: const Icon(Icons.wifi_tethering, color: Colors.green),
             title: const Text('Beacon Comment',

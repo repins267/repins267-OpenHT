@@ -2,7 +2,6 @@
 // Radio connection and app settings
 
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../bluetooth/radio_service.dart';
@@ -11,12 +10,14 @@ import 'repeaterbook_settings_screen.dart';
 import '../../services/noaa_service.dart';
 import 'tracks_screen.dart';
 import 'aprs_settings_screen.dart';
+import 'noaa_radio_settings_screen.dart';
 import 'auth_settings_screen.dart';
 import 'channel_manager_screen.dart';
 import 'js8call_settings_screen.dart';
 import 'map_cache_settings_screen.dart';
 import 'radio_debug_screen.dart';
 import 'spotter_network_settings_screen.dart';
+import '../dtmf/dtmf_screen.dart';
 
 // Known Benshi-protocol radio name prefixes and Vero OUI
 bool _isLikelyRadio(device) {
@@ -46,7 +47,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Weather Monitoring
   bool _weatherAlertsEnabled = false;
-  bool _nwrMonitorEnabled    = false;
 
   // APRS
   bool _aprsReceive       = true;
@@ -70,7 +70,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _callsign           = prefs.getString('callsign')          ?? '';
       _sameCode           = sameCode;
       _weatherAlertsEnabled = weatherEnabled;
-      _nwrMonitorEnabled  = prefs.getBool('nwr_monitor_enabled') ?? false;
       _aprsReceive        = prefs.getBool('aprs_is_enabled')      ?? true;
       _aprsBeaconEnabled  = prefs.getBool('aprs_beacon_enabled')  ?? false;
       _beaconIntervalMin  = prefs.getInt('aprs_beacon_interval_min') ?? 5;
@@ -86,13 +85,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final radio = context.watch<RadioService>();
-    final noaa  = context.watch<NoaaService>();
-    final nearestStation = noaa.stations.isNotEmpty ? noaa.stations.first : null;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+
+          // ─── Branding ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Image.asset(
+                  'assets/openht_logo.png',
+                  height: 180,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
 
           // ─── Radio Connection ────────────────────────
           _SectionHeader('Radio Connection'),
@@ -209,42 +225,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ─── Weather Monitoring ───────────────────────
           _SectionHeader('Weather Monitoring'),
-          SwitchListTile(
-            secondary: Icon(
-              Icons.notifications_active_outlined,
-              color: _weatherAlertsEnabled ? Colors.orange : Colors.grey,
-            ),
-            title: const Text('Weather Alert Notifications',
+          ListTile(
+            leading: const Icon(Icons.cloud_outlined, color: Colors.lightBlue),
+            title: const Text('NOAA Radio Settings',
                 style: TextStyle(color: Colors.white)),
-            subtitle: Text(
-              _weatherAlertsEnabled
-                  ? 'Notifying on Extreme/Severe alerts · every 5 min'
-                  : 'Get notified of tornado and severe thunderstorm warnings',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-            value: _weatherAlertsEnabled,
-            onChanged: _setWeatherAlertsEnabled,
-          ),
-          SwitchListTile(
-            secondary: Icon(
-              Icons.radio_outlined,
-              color: (_nwrMonitorEnabled && radio.isConnected) ? Colors.blue : Colors.grey,
-            ),
-            title: const Text('NWR Auto-Monitor',
-                style: TextStyle(color: Colors.white)),
-            subtitle: Text(
-              !radio.isConnected
-                  ? 'Connect radio to use'
-                  : _nwrMonitorEnabled && nearestStation != null
-                      ? 'Band B → ${nearestStation.callSign} ${nearestStation.displayFreq}'
-                      : 'Tunes Band B to the nearest NOAA weather station',
-              style: TextStyle(
-                color: !radio.isConnected ? Colors.white38 : Colors.white54,
-                fontSize: 12,
-              ),
-            ),
-            value: _nwrMonitorEnabled && radio.isConnected,
-            onChanged: radio.isConnected ? _setNwrMonitorEnabled : null,
+            subtitle: const Text(
+                'WX mode/channel, weather alerts, NWR auto-monitor',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const NoaaRadioSettingsScreen())),
           ),
 
           // ─── Spotter Network ──────────────────────────
@@ -361,6 +353,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // ─── Channels & Radio ─────────────────────────
+          _SectionHeader('Signaling'),
+          ListTile(
+            leading: const Icon(Icons.dialpad, color: Colors.amber),
+            title: const Text('DTMF',
+                style: TextStyle(color: Colors.white)),
+            subtitle: const Text('Type/save touch-tone strings & transmit',
+                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const DtmfScreen())),
+          ),
+
           _SectionHeader('Channels & Radio'),
           ListTile(
             leading: const Icon(Icons.list_alt, color: Colors.blue),
@@ -454,43 +458,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _isScanning = true);
     await radio.scanPairedDevices();
     setState(() => _isScanning = false);
-  }
-
-  Future<void> _setWeatherAlertsEnabled(bool v) async {
-    final noaa = context.read<NoaaService>(); // capture before await
-    // Request POST_NOTIFICATIONS permission on Android 13+
-    if (v) await Permission.notification.request();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('weather_alerts_enabled', v);
-    if (!mounted) return;
-    setState(() => _weatherAlertsEnabled = v);
-    if (v) {
-      noaa.startPolling(sameCode: _sameCode.isEmpty ? null : _sameCode);
-    } else {
-      noaa.stopPolling();
-    }
-  }
-
-  Future<void> _setNwrMonitorEnabled(bool v) async {
-    // Capture context-dependent objects before any await
-    final radio     = context.read<RadioService>();
-    final noaa      = context.read<NoaaService>();
-    final messenger = ScaffoldMessenger.of(context);
-    final prefs     = await SharedPreferences.getInstance();
-    await prefs.setBool('nwr_monitor_enabled', v);
-    if (!mounted) return;
-    setState(() => _nwrMonitorEnabled = v);
-    if (!v || !radio.isConnected || noaa.stations.isEmpty) return;
-    final station = noaa.stations.first;
-    final ok = await radio.tuneBandB(station.frequency);
-    if (!mounted) return;
-    messenger.showSnackBar(SnackBar(
-      content: Text(ok
-          ? 'Band B → ${station.callSign} ${station.displayFreq}'
-          : 'Band B tune failed: ${radio.errorMessage}'),
-      backgroundColor: ok ? Colors.blue[700] : Colors.red[700],
-      duration: const Duration(seconds: 2),
-    ));
   }
 
   Future<void> _setAprsReceive(bool v) async {

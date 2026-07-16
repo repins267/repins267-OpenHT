@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../aprs/aprs_is_service.dart';
 import '../../services/aprs_auth_service.dart';
 import '../../services/aprs_message_service.dart';
+import '../../services/canned_messages.dart';
 
 class MessageThreadScreen extends StatefulWidget {
   final String peerCallsign;
@@ -326,6 +327,73 @@ class _InputBarState extends State<_InputBar> {
 
   void _update() => setState(() => _len = widget.controller.text.length);
 
+  /// Bottom sheet of pre-saved messages: tap to drop one into the field, delete
+  /// with the trash icon, or save the current text as a new canned message.
+  Future<void> _showCanned() async {
+    var list = await CannedMessages.load();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text('Saved messages',
+                    style: TextStyle(color: Colors.white, fontSize: 16)),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (int i = 0; i < list.length; i++)
+                      ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.quickreply_outlined,
+                            color: Colors.cyan),
+                        title: Text(list[i],
+                            style: const TextStyle(color: Colors.white)),
+                        onTap: () {
+                          widget.controller.text = list[i];
+                          widget.controller.selection =
+                              TextSelection.collapsed(offset: list[i].length);
+                          Navigator.pop(ctx);
+                        },
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline,
+                              color: Colors.white38),
+                          onPressed: () async {
+                            list = await CannedMessages.removeAt(i);
+                            setSheet(() {});
+                          },
+                        ),
+                      ),
+                    ListTile(
+                      leading:
+                          const Icon(Icons.add, color: Colors.greenAccent),
+                      title: const Text('Save current text as message',
+                          style: TextStyle(color: Colors.greenAccent)),
+                      enabled: widget.controller.text.trim().isNotEmpty,
+                      onTap: () async {
+                        list = await CannedMessages.add(widget.controller.text);
+                        setSheet(() {});
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final remaining = widget.maxChars - _len;
@@ -339,6 +407,11 @@ class _InputBarState extends State<_InputBar> {
         ),
         child: Row(
           children: [
+            IconButton(
+              icon: const Icon(Icons.quickreply_outlined, color: Colors.cyan),
+              tooltip: 'Saved messages',
+              onPressed: widget.disabled ? null : _showCanned,
+            ),
             Expanded(
               child: TextField(
                 controller: widget.controller,

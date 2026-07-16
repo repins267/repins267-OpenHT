@@ -42,3 +42,6 @@ pubspec_overrides.yaml
 reverse/
 *.apk
 *.dex
+
+# Vendor firmware binaries — never redistribute
+assets/*.firmware

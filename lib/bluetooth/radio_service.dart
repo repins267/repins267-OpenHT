@@ -773,6 +773,47 @@ class RadioService extends ChangeNotifier {
     }
   }
 
+  // ── Native radio weather (WX) mode — drives the UV-Pro firmware NOAA feature ──
+  int get wxMode => _controller?.settings?.wxMode ?? 0;
+  int get noaaChannel => _controller?.settings?.noaaCh ?? 0;
+
+  Future<void> setWxMode(int mode) async {
+    if (_controller == null) return;
+    final s = _controller!.settings;
+    if (s == null) return;
+    try {
+      await _controller!.writeSettings(s.copyWith(wxMode: mode));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('OpenHT: setWxMode failed: $e');
+    }
+  }
+
+  Future<void> setNoaaChannel(int ch) async {
+    if (_controller == null) return;
+    final s = _controller!.settings;
+    if (s == null) return;
+    try {
+      await _controller!.writeSettings(s.copyWith(noaaCh: ch.clamp(0, 6)));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('OpenHT: setNoaaChannel failed: $e');
+    }
+  }
+
+  // ── Radio BSS / beacon settings (SmartBeacon, Mic-E, APRS callsign) ──
+  Future<BSSSettings?> getBeaconSettings() =>
+      _controller?.readBssSettings() ?? Future.value(null);
+
+  Future<void> setBeaconSettings(BSSSettings s) async {
+    try {
+      await _controller?.writeBssSettings(s);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('OpenHT: setBeaconSettings failed: $e');
+    }
+  }
+
   Future<void> stepFrequency(double stepMhz) async {
     if (_controller == null) return;
     final current = _controller!.currentRxFreq;

@@ -27,6 +27,7 @@ class RepeaterBookClient {
     String? band,
     bool onlyOpen = true,
     String country = 'US',
+    String? apiToken,
   }) async {
     await _rateLimit();
 
@@ -52,11 +53,17 @@ class RepeaterBookClient {
 
     debugPrint('RepeaterBook: GET $uri');
 
+    final headers = <String, String>{
+      'User-Agent': 'OpenHT/1.0 (github.com/repins267/repins267-OpenHT; N0TEZ)',
+    };
+    // Per-user app-bound token authenticates the distributed-app request.
+    if (apiToken != null && apiToken.isNotEmpty) {
+      headers['X-RB-App-Token'] = apiToken;
+    }
+
     late http.Response response;
     try {
-      response = await http
-          .get(uri, headers: {'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)'})
-          .timeout(_timeout);
+      response = await http.get(uri, headers: headers).timeout(_timeout);
     } catch (e) {
       debugPrint('RepeaterBook: Request failed — $e');
       throw RepeaterBookException('Network error: $e');
@@ -102,7 +109,7 @@ class RepeaterBookClient {
     late http.Response response;
     try {
       response = await http
-          .get(uri, headers: {'User-Agent': 'OpenHT/0.1 (github.com/repins267/OpenHT)'})
+          .get(uri, headers: {'User-Agent': 'OpenHT/1.0 (github.com/repins267/repins267-OpenHT; N0TEZ)'})
           .timeout(const Duration(seconds: 30));
     } catch (e) {
       debugPrint('RepeaterBook: Request failed — $e');

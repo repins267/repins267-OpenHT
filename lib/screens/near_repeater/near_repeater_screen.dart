@@ -13,9 +13,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../services/gps_service.dart';
 import '../../bluetooth/radio_service.dart';
-import '../../services/repeaterbook_connect_service.dart';
 import '../../services/repeaterbook_service.dart';
 import '../../services/repeaterbook_token_service.dart';
+import '../../repeaterbook/repeaterbook_client.dart';
+import '../../models/repeater.dart' as rb;
 
 // Returns radio GPS if the radio has a fix, otherwise falls back to phone GPS.
 ({double? lat, double? lon, bool hasPos}) _bestGps(
@@ -150,7 +151,7 @@ class NearRepeaterScreen extends StatefulWidget {
   State<NearRepeaterScreen> createState() => _NearRepeaterScreenState();
 }
 
-enum _DataSource { repeaterBook, cachedLive, importedGpx, none }
+enum _DataSource { repeaterBook, importedGpx, none }
 
 class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
   List<_Repeater> _all = [];
@@ -185,30 +186,30 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
     final double? lat = pos.hasPos ? pos.lat : null;
     final double? lon = pos.hasPos ? pos.lon : null;
 
-    // ── Try RepeaterBook content provider first ──────────────────────────────
-    try {
-      final rbRepeaters = await RepeaterBookConnectService.queryRepeaters();
-      if (rbRepeaters.isNotEmpty) {
-        final all = rbRepeaters.map((r) => _Repeater(
-          lat: r.lat,
-          lon: r.lon,
-          callsign: r.callsign,
-          outputFreq: r.outputFreq,
-          offsetDir: r.outputFreq > r.inputFreq ? '-' : (r.outputFreq < r.inputFreq ? '+' : ''),
-          ctcssHz: r.ctcssHz,
-          location: r.location,
-          isOpen: r.isOpen,
-          band: r.band,
-          serviceText: r.serviceText,
-        )).toList();
-
-        if (lat != null && lon != null) {
-          for (final r in all) {
-            r.distanceMiles = _distanceMiles(lat, lon, r.lat, r.lon);
-          }
-          all.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
+    // ── Near-repeater data comes from the RepeaterBook Connect Data API,
+    //    authenticated with the user's own app-bound token. No token = no
+    //    near-repeater lookup. Results are used live only — never cached to disk.
+    final tokenSvc = context.read<RepeaterBookTokenService>();
+    if (tokenSvc.hasToken && lat != null && lon != null) {
+      try {
+        final apiResults = await RepeaterBookClient().fetchNearby(
+          lat: lat,
+          lon: lon,
+          radiusMiles: 50,
+          onlyOpen: true,
+          apiToken: tokenSvc.token,
+        );
+        // Keep only what this radio can use: 2 m (144–148) or 70 cm (420–450).
+        final all = apiResults
+            .where((r) =>
+                (r.frequency >= 144 && r.frequency <= 148) ||
+                (r.frequency >= 420 && r.frequency <= 450))
+            .map(_fromApi)
+            .toList();
+        for (final r in all) {
+          r.distanceMiles = _distanceMiles(lat, lon, r.lat, r.lon);
         }
-
+        all.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
         if (mounted) {
           setState(() {
             _all = all;
@@ -217,45 +218,13 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
           });
         }
         return;
+      } catch (e) {
+        debugPrint('NearRepeater: RepeaterBook Connect Data API failed: $e');
+        // fall through to any user-imported data below
       }
-    } catch (e) {
-      debugPrint('NearRepeater: RepeaterBook provider failed: $e');
     }
 
-    // ── Fallback 1: cached live data from previous RepeaterBook query ────────
-    if (RepeaterBookConnectService.hasCachedData) {
-      final rbRepeaters = RepeaterBookConnectService.cachedRepeaters;
-      final all = rbRepeaters.map((r) => _Repeater(
-        lat: r.lat,
-        lon: r.lon,
-        callsign: r.callsign,
-        outputFreq: r.outputFreq,
-        offsetDir: r.outputFreq > r.inputFreq ? '-' : (r.outputFreq < r.inputFreq ? '+' : ''),
-        ctcssHz: r.ctcssHz,
-        location: r.location,
-        isOpen: r.isOpen,
-        band: r.band,
-        serviceText: r.serviceText,
-      )).toList();
-
-      if (lat != null && lon != null) {
-        for (final r in all) {
-          r.distanceMiles = _distanceMiles(lat, lon, r.lat, r.lon);
-        }
-        all.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
-      }
-
-      if (mounted) {
-        setState(() {
-          _all = all;
-          _dataSource = _DataSource.cachedLive;
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    // ── Fallback 2: imported GPX cache (RepeaterBookService) ────────────────
+    // ── Fallback: user-imported GPX/CSV (their own RepeaterBook export) ──────
     if (rbService.hasData) {
       final all = rbService.repeaters.map((r) => _Repeater(
         lat: r.lat,
@@ -295,6 +264,22 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
       });
     }
   }
+
+  /// Maps a RepeaterBook Connect Data API result to the screen's row model.
+  _Repeater _fromApi(rb.Repeater r) => _Repeater(
+        lat: r.latitude,
+        lon: r.longitude,
+        callsign: r.callsign ?? '',
+        outputFreq: r.frequency,
+        offsetDir: (r.offset == 'S') ? '' : (r.offset ?? ''),
+        ctcssHz: double.tryParse(r.tone ?? ''),
+        location: [r.city, r.state]
+            .where((s) => s != null && s.isNotEmpty)
+            .join(', '),
+        isOpen: (r.use ?? '').toUpperCase() == 'OPEN',
+        band: r.frequency >= 420 ? '70cm' : '2m',
+        serviceText: (r.modes == null || r.modes!.isEmpty) ? 'FM' : r.modes!,
+      );
 
   Future<void> _import() async {
     final rbService = context.read<RepeaterBookService>();
@@ -647,18 +632,10 @@ class _NearRepeaterScreenState extends State<NearRepeaterScreen> {
 
   Widget _attributionFooter() {
     final rbService = context.read<RepeaterBookService>();
-    String _ageLabel(DateTime? dt) {
-      if (dt == null) return '';
-      final d = DateTime.now().difference(dt);
-      if (d.inDays  > 0) return ' · cached ${d.inDays}d ago';
-      if (d.inHours > 0) return ' · cached ${d.inHours}h ago';
-      return ' · cached ${d.inMinutes}m ago';
-    }
     final text = switch (_dataSource) {
-      _DataSource.repeaterBook => 'Live data via RepeaterBook app · © RepeaterBook.com',
-      _DataSource.cachedLive   => 'Cached RepeaterBook data${_ageLabel(RepeaterBookConnectService.cachedAt)} · © RepeaterBook.com · Open RB app to refresh',
+      _DataSource.repeaterBook => 'Live via RepeaterBook Connect Data API · © RepeaterBook.com',
       _DataSource.importedGpx  => '${_all.length} repeaters from ${rbService.importCount} GPX file(s) · © RepeaterBook.com',
-      _DataSource.none         => 'No repeater data · open the RepeaterBook app or tap ⋮ to import',
+      _DataSource.none         => 'No repeater data · add your RepeaterBook API token in Settings → RepeaterBook, or tap ⋮ to import a GPX',
     };
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

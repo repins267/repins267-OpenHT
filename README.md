@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/openht_logo.png" width="160" alt="OpenHT logo"/>
+</p>
+
 # OpenHT
 
 > Open-source Android **radio-programming and EmComm companion** for the Vero VR-N76 and
@@ -26,12 +30,12 @@
   <tr>
     <td align="center"><b>APRS Map</b></td>
     <td align="center"><b>Spotter Network</b></td>
-    <td align="center"></td>
+    <td align="center"><b>DTMF / Signaling</b></td>
   </tr>
   <tr>
     <td><img src="assets/screenshots/OpenHT_APRSv1.png" width="220" alt="OpenHT APRS Map"/></td>
     <td><img src="assets/screenshots/OpenHT_Spottterv1.png" width="220" alt="OpenHT Spotter Network"/></td>
-    <td></td>
+    <td><img src="assets/screenshots/OpenHT_DTMFv1.png" width="220" alt="OpenHT DTMF / Signaling"/></td>
   </tr>
 </table>
 
@@ -99,6 +103,14 @@ hardware — no vendor binaries redistributed.
 ### APRS
 - Live APRS station map (OpenStreetMap), decoded packet markers, distance-sorted list.
 - APRS-IS beacon sender + iGate configuration; Spotter Network overlay.
+- **Canned (pre-saved) messages** — compose reusable APRS message templates on the phone and send
+  them from the message thread with one tap, instead of pad-typing on the radio.
+
+### Signaling (DTMF)
+- **DTMF composer** — type or tap a DTMF string (`0-9 A-D * #`) on the phone keyboard, save named
+  presets (e.g. *Gate open*), and transmit. OpenHT synthesizes the dual-tone PCM and pushes it out
+  the radio's app-audio TX path (keys → tones → unkey) — no more four-way-pad entry on the radio.
+- Selectable send speed (Slow / Normal / Fast).
 
 ### Weather & Emergency Auto-Tune
 - **NOAA/NWS alerts** with SAME/FIPS filtering and push notifications for Severe/Extreme events.
@@ -107,13 +119,15 @@ hardware — no vendor binaries redistributed.
   SKYWARN plan channel (Priority 1) or the nearest NWR transmitter for the alerted county (Priority 2).
 
 ### Settings & Developer Tools
-- Channel & Group Manager, Frequency Plans, RepeaterBook, Weather, APRS, Developer.
+- Channel & Group Manager, Frequency Plans, RepeaterBook, Weather, APRS, Signaling (DTMF), Developer.
 - Radio Debug Terminal — live HEX TX/RX log.
 
 ### 🚧 Pending
-- **RepeaterBook** approved-distributed-app application + API token integration — the in-app plumbing
-  (secure token entry, headers, attribution, gating) is in place; live Web API access is pending
-  RepeaterBook's approval of OpenHT as an approved distributed app.
+- **RepeaterBook** approved-distributed-app application — the in-app plumbing is complete: secure
+  on-device token entry, the `X-RB-App-Token` header, attribution, gating, and the **Near Repeater**
+  screen wired to query the RepeaterBook Connect Data API live. Public availability is pending
+  RepeaterBook's approval of OpenHT as an approved distributed app; until then it works with a
+  developer/beta token.
 
 ---
 
@@ -133,8 +147,11 @@ Two paths, both keeping value with RepeaterBook:
    builds a **frequency plan of local ARES / RACES / SKYWARN repeaters** (2 m / 70 cm, FM) and writes it
    to **Channel Group 4**, from the **Frequency Plans** menu, using your own RepeaterBook Connect
    subscription. This is the *only* way emergency-net RB data is written, and it only targets Group 4.
-2. **Near Repeater programming + "Tune To"** (token required) — uses the **RepeaterBook Web API** with
-   **your own app-bound token** to program near repeaters (**Group 6**) and tune the radio.
+2. **Near Repeater** (token required) — queries the **RepeaterBook Connect Data API** live with
+   **your own app-bound token** and shows a **distance-sorted list** of nearby 2 m / 70 cm FM
+   repeaters (no map), for programming near repeaters into **Group 6**. Results are shown on-device
+   for that query only — **nothing is cached or persisted**. Without a token the list stays empty and
+   OpenHT prompts you to add one in **Settings → RepeaterBook**.
 
 **Getting a token** (once OpenHT is an approved distributed app):
 1. Sign in at [repeaterbook.com](https://www.repeaterbook.com) → **API Apps & Tokens**
